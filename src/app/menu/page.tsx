@@ -22,7 +22,9 @@ export default function MenuPage() {
   useEffect(() => {
     const p = getPerfil();
     if (!p) { router.push('/'); return; }
-    setPerfil(p);
+    setTimeout(() => {
+      setPerfil(p);
+    }, 0);
   }, [router]);
 
   if (!perfil) return null;

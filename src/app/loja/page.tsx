@@ -15,10 +15,13 @@ export default function LojaPage() {
   
   useEffect(() => {
     const p = getPerfil();
-    if (!p) router.push('/');
-    else {
-      setPerfil(p);
-      initAudio();
+    if (!p) {
+      router.push('/');
+    } else {
+      setTimeout(() => {
+        setPerfil(p);
+        initAudio();
+      }, 0);
     }
   }, [router]);
 

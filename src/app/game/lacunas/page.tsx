@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Play, ChevronRight, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Play, Lightbulb } from 'lucide-react';
 import { exerciciosLacunas } from '@/data/exercises-lacunas';
 import { carregarLacunasCustom } from '@/lib/custom-exercises';
 import { ExercicioLacuna } from '@/types';
@@ -149,7 +149,6 @@ export default function LacunasPage() {
       }
       return <span key={i}>{part}</span>;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ex, answers, errors]);
 
   return (
@@ -190,7 +189,7 @@ export default function LacunasPage() {
                         Revelar Primeira Letra (-20 XP)
                       </button>
                     ) : (
-                      <span className="badge badge-warning text-[10px] ml-1 py-0 h-5 flex items-center">Começa com "{correta.charAt(0)}"</span>
+                      <span className="badge badge-warning text-[10px] ml-1 py-0 h-5 flex items-center">Começa com &quot;{correta.charAt(0)}&quot;</span>
                     )}
                   </div>
                 );

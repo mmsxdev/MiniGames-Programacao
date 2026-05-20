@@ -6,10 +6,13 @@ import { ArrowLeft, CheckCircle, XCircle, Zap } from 'lucide-react';
 import { quizQuestions } from '@/data/quiz-questions';
 import { carregarQuizCustom } from '@/lib/custom-exercises';
 import { Pergunta } from '@/types';
-import { calcularXPQuiz, BONUS } from '@/lib/scoring';
+import { BONUS } from '@/lib/scoring';
 import { getPerfil, salvarResultado, adicionarBadge } from '@/lib/storage';
 import { ScoreBar } from '@/components/game/ScoreBar';
 import { ThemeToggle } from '@/components/ThemeToggle';
+
+// Função utilitária externa pura para manter o render React determinístico
+const obterTempoAtual = () => Date.now();
 
 export default function QuizPage() {
   const router = useRouter();
@@ -19,20 +22,19 @@ export default function QuizPage() {
   const [acertos, setAcertos] = useState(0);
   const [streak, setStreak] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
-  const [respostasRapidas, setRespostasRapidas] = useState(0);
   const [totalXP, setTotalXP] = useState(0);
   const [results, setResults] = useState<boolean[]>([]);
   const [done, setDone] = useState(false);
   const [qTimer, setQTimer] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
-  const startTimeRef = useRef(Date.now());
+  const startTimeRef = useRef(0);
   const [allQuestions, setAllQuestions] = useState<Pergunta[]>(quizQuestions);
 
   const q = allQuestions[idx];
 
   useEffect(() => {
     if (!getPerfil()) { router.push('/'); return; }
-    startTimeRef.current = Date.now();
+    startTimeRef.current = obterTempoAtual();
     carregarQuizCustom().then(custom => {
       if (custom.length > 0) {
         setAllQuestions([...quizQuestions, ...custom]);
@@ -42,8 +44,7 @@ export default function QuizPage() {
 
   useEffect(() => {
     if (done) return;
-    setQTimer(0);
-    startTimeRef.current = Date.now();
+    startTimeRef.current = obterTempoAtual();
     timerRef.current = setInterval(() => setQTimer(t => t + 1), 1000);
     return () => clearInterval(timerRef.current);
   }, [idx, done]);
@@ -56,7 +57,7 @@ export default function QuizPage() {
 
     const opt = q.opcoes.find(o => o.id === optId);
     const isCorrect = opt?.correta ?? false;
-    const elapsed = (Date.now() - startTimeRef.current) / 1000;
+    const elapsed = (obterTempoAtual() - startTimeRef.current) / 1000;
     const wasRapido = q.tempoBonusSegundos ? elapsed <= q.tempoBonusSegundos : false;
 
     if (isCorrect) {
@@ -64,7 +65,6 @@ export default function QuizPage() {
       const newStreak = streak + 1;
       setStreak(newStreak);
       setMaxStreak(prev => Math.max(prev, newStreak));
-      if (wasRapido) setRespostasRapidas(prev => prev + 1);
       let xpGanho = q.xpBase;
       if (wasRapido) xpGanho += BONUS.rapido;
       xpGanho += newStreak * BONUS.streakCorreta;
@@ -80,11 +80,12 @@ export default function QuizPage() {
     setAnswered(false);
     if (idx < allQuestions.length - 1) {
       setIdx(idx + 1);
+      setQTimer(0); // Reseta o cronômetro da pergunta no evento de transição, evitando cascading render no useEffect
     } else {
       setDone(true);
       clearInterval(timerRef.current);
       const finalAcertos = acertos + (results[results.length - 1] ? 0 : 0); // already counted
-      const totalTime = Math.round((Date.now() - startTimeRef.current) / 1000);
+      const totalTime = Math.round((obterTempoAtual() - startTimeRef.current) / 1000);
       salvarResultado('quiz', { completadoEm: new Date().toISOString(), xpGanho: totalXP, tentativas: 1, acertos: finalAcertos, totalQuestoes: allQuestions.length, tempoSegundos: totalTime });
       if (finalAcertos === allQuestions.length) adicionarBadge('🧠 Mestre do Quiz');
       if (maxStreak >= 5) adicionarBadge('🔥 Em Chamas');

@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
           { status: 403 }
         );
       }
-    } catch (err) {
+    } catch {
       lastError = `${model}: erro de conexão`;
     }
   }

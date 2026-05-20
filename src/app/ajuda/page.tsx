@@ -80,7 +80,7 @@ export default function AjudaPage() {
               <ol className="flex flex-col gap-2 ml-4">
                 {s.steps.map((step, j) => (
                   <li key={j} className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: `${s.color}20`, color: s.color }}>{j + 1}</span>
+                    <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: `${s.color}20`, color: s.color }}>{j + 1}</span>
                     {step}
                   </li>
                 ))}

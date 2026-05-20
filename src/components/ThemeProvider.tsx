@@ -13,7 +13,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem('portugol-theme') as Theme | null;
-    if (saved) { setTheme(saved); document.documentElement.setAttribute('data-theme', saved); }
+    if (saved) {
+      document.documentElement.setAttribute('data-theme', saved);
+      setTimeout(() => {
+        setTheme(saved);
+      }, 0);
+    }
   }, []);
 
   const toggle = () => {

@@ -16,7 +16,7 @@ export default function PainelProfessor() {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
-  const [exerciciosGerados, setExerciciosGerados] = useState<any[]>([]);
+  const [exerciciosGerados, setExerciciosGerados] = useState<unknown[]>([]);
 
   // Novos estados para publicação
   const [salvando, setSalvando] = useState(false);
@@ -45,7 +45,7 @@ export default function PainelProfessor() {
         setExerciciosGerados(resultado.exercicios);
         setSucesso(true);
       }
-    } catch (err) {
+    } catch {
       setErro('Ocorreu um erro inesperado ao tentar gerar os exercícios.');
     } finally {
       setCarregando(false);
@@ -74,8 +74,9 @@ export default function PainelProfessor() {
       setSalvoComSucesso(true);
       setSucesso(false); // limpa o sucesso de geração para focar no de publicação
       setExerciciosGerados([]); // limpa a lista após publicar
-    } catch (err: any) {
-      setErro('Erro ao publicar os exercícios no Supabase: ' + err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setErro('Erro ao publicar os exercícios no Supabase: ' + msg);
     } finally {
       setSalvando(false);
     }
@@ -87,7 +88,7 @@ export default function PainelProfessor() {
         
         {/* Cabeçalho */}
         <header className="border-b border-slate-800 pb-6">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-linear-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
             Painel do Professor — Portugol Games
           </h1>
           <p className="text-slate-400 mt-2">
@@ -208,7 +209,7 @@ export default function PainelProfessor() {
             <button
               type="submit"
               disabled={carregando}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-600 text-white font-medium py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 border border-blue-400/20 shadow-lg shadow-blue-500/10 cursor-pointer disabled:cursor-not-allowed"
+              className="w-full bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-600 text-white font-medium py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 border border-blue-400/20 shadow-lg shadow-blue-500/10 cursor-pointer disabled:cursor-not-allowed"
             >
               {carregando ? (
                 <>
@@ -270,7 +271,7 @@ export default function PainelProfessor() {
                 type="button"
                 onClick={handlePublicar}
                 disabled={salvando}
-                className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-slate-850 disabled:to-slate-850 disabled:text-slate-600 text-white font-semibold py-2.5 px-6 rounded-lg transition-all flex items-center justify-center gap-2 border border-emerald-400/20 shadow-lg shadow-emerald-500/10 cursor-pointer disabled:cursor-not-allowed text-sm"
+                className="bg-linear-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-slate-850 disabled:to-slate-850 disabled:text-slate-600 text-white font-semibold py-2.5 px-6 rounded-lg transition-all flex items-center justify-center gap-2 border border-emerald-400/20 shadow-lg shadow-emerald-500/10 cursor-pointer disabled:cursor-not-allowed text-sm"
               >
                 {salvando ? (
                   <>
