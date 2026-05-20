@@ -3,188 +3,232 @@ import { ExercicioLacuna } from '@/types';
 export const exerciciosLacunas: ExercicioLacuna[] = [
   {
     id: 'lac-1',
-    titulo: 'Saudação Personalizada',
-    descricao: 'Leia um apelido e exiba uma mensagem de boas-vindas.',
+    titulo: 'Boas-Vindas da Escola',
+    descricao: 'Leia o nome do aluno e exiba uma mensagem de recepção no Portugol Games.',
     xpMaximo: 100,
     codigoTemplate: `programa
 {
 	funcao inicio()
 	{
-		__LACUNA_1__ apelido
-
-		escreva("Digite seu apelido: ")
-		__LACUNA_2__(apelido)
-
-		escreva("Bem-vindo, ", __LACUNA_3__, "!\\n")
+		__LACUNA_1__ aluno
+		escreva("Qual o seu nome? ")
+		__LACUNA_2__(aluno)
+		escreva("Olá, ", __LACUNA_3__, "! Bem-vindo ao Portugol Games.\\n")
 	}
 }`,
     lacunas: [
-      { id: 'LACUNA_1', dica: 'Tipo de variável para texto', tamanhoVisual: 6 },
-      { id: 'LACUNA_2', dica: 'Comando para ler a entrada do teclado', tamanhoVisual: 4 },
-      { id: 'LACUNA_3', dica: 'Nome da variável', tamanhoVisual: 7 },
+      { id: 'LACUNA_1', dica: 'Tipo de variável para armazenar texto', tamanhoVisual: 6 },
+      { id: 'LACUNA_2', dica: 'Comando para receber a entrada do usuário', tamanhoVisual: 4 },
+      { id: 'LACUNA_3', dica: 'Nome da variável contendo o texto digitado', tamanhoVisual: 5 },
     ],
-    respostasCorretas: { LACUNA_1: 'cadeia', LACUNA_2: 'leia', LACUNA_3: 'apelido' },
-    entradaSimulada: ['Miguel'],
-    outputEsperado: 'Digite seu apelido: Miguel\nBem-vindo, Miguel!',
+    respostasCorretas: { LACUNA_1: 'cadeia', LACUNA_2: 'leia', LACUNA_3: 'aluno' },
+    entradaSimulada: ['Lucas'],
+    outputEsperado: 'Qual o seu nome? Lucas\nOlá, Lucas! Bem-vindo ao Portugol Games.',
     dificuldade: 'facil',
   },
   {
     id: 'lac-2',
-    titulo: 'Cadastro de Vendedor',
-    descricao: 'Leia o nome e total de vendas, exibindo o resultado formatado.',
-    xpMaximo: 120,
+    titulo: 'Contador de Lanches',
+    descricao: 'Calcule o total de itens consumidos na cantina somando coxinha e suco.',
+    xpMaximo: 100,
     codigoTemplate: `programa
 {
 	funcao inicio()
 	{
-		cadeia nome
-		__LACUNA_1__ vendas
-
-		escreva("Nome do vendedor: ")
-		leia(nome)
-
-		escreva("Total vendido: ")
-		__LACUNA_2__(vendas)
-
-		escreva("O vendedor ", nome, " vendeu R$", __LACUNA_3__, "\\n")
+		__LACUNA_1__ lanches, sucos, total
+		lanches = 3
+		sucos = 2
+		total = lanches __LACUNA_2__ sucos
+		escreva("Total de itens: ", __LACUNA_3__, "\\n")
 	}
 }`,
     lacunas: [
-      { id: 'LACUNA_1', dica: 'Tipo numérico com casas decimais', tamanhoVisual: 4 },
-      { id: 'LACUNA_2', dica: 'Comando para ler a variável', tamanhoVisual: 4 },
-      { id: 'LACUNA_3', dica: 'Variável de total vendido', tamanhoVisual: 6 },
+      { id: 'LACUNA_1', dica: 'Tipo numérico sem casas decimais', tamanhoVisual: 7 },
+      { id: 'LACUNA_2', dica: 'Operador matemático de soma', tamanhoVisual: 1 },
+      { id: 'LACUNA_3', dica: 'Variável com o resultado final do cálculo', tamanhoVisual: 5 },
     ],
-    respostasCorretas: { LACUNA_1: 'real', LACUNA_2: 'leia', LACUNA_3: 'vendas' },
-    entradaSimulada: ['João', '1500.5'],
-    outputEsperado: 'Nome do vendedor: João\nTotal vendido: 1500.5\nO vendedor João vendeu R$1500.5',
+    respostasCorretas: { LACUNA_1: 'inteiro', LACUNA_2: '+', LACUNA_3: 'total' },
+    entradaSimulada: [],
+    outputEsperado: 'Total de itens: 5',
     dificuldade: 'facil',
   },
   {
     id: 'lac-3',
-    titulo: 'Triplo e Metade',
-    descricao: 'Calcule e exiba o triplo e a metade de um valor lido.',
-    xpMaximo: 120,
+    titulo: 'Resto da Divisão',
+    descricao: 'Descubra se um número é divisível obtendo o resto da divisão por 2.',
+    xpMaximo: 100,
     codigoTemplate: `programa
 {
 	funcao inicio()
 	{
-		real valor, triplo, metade
-
-		escreva("Digite um valor: ")
-		leia(valor)
-
-		triplo = valor __LACUNA_1__ 3
-		metade = valor __LACUNA_2__ 2
-
-		escreva("Triplo: ", __LACUNA_3__, "\\n")
-		escreva("Metade: ", metade, "\\n")
+		inteiro numero, resto
+		escreva("Número: ")
+		leia(numero)
+		resto = numero __LACUNA_1__ 2
+		escreva("Resto encontrado: ", __LACUNA_2__, "\\n")
 	}
 }`,
     lacunas: [
-      { id: 'LACUNA_1', dica: 'Operador de multiplicação', tamanhoVisual: 1 },
-      { id: 'LACUNA_2', dica: 'Operador de divisão', tamanhoVisual: 1 },
-      { id: 'LACUNA_3', dica: 'Variável com resultado do triplo', tamanhoVisual: 6 },
+      { id: 'LACUNA_1', dica: 'Operador aritmético que calcula o resto da divisão', tamanhoVisual: 1 },
+      { id: 'LACUNA_2', dica: 'Nome da variável contendo o resto', tamanhoVisual: 5 },
     ],
-    respostasCorretas: { LACUNA_1: '*', LACUNA_2: '/', LACUNA_3: 'triplo' },
-    entradaSimulada: ['10'],
-    outputEsperado: 'Digite um valor: 10\nTriplo: 30\nMetade: 5',
+    respostasCorretas: { LACUNA_1: '%', LACUNA_2: 'resto' },
+    entradaSimulada: ['9'],
+    outputEsperado: 'Número: 9\nResto encontrado: 1',
     dificuldade: 'facil',
   },
   {
     id: 'lac-4',
-    titulo: 'Área do Terreno',
-    descricao: 'Calcule a área de um terreno usando largura e comprimento.',
+    titulo: 'Aprovado ou Recuperação',
+    descricao: 'Determine se a média do trimestre garante aprovação ou se o aluno fica de recuperação.',
     xpMaximo: 150,
     codigoTemplate: `programa
 {
 	funcao inicio()
 	{
-		real largura, comprimento, area
-
-		escreva("Digite a largura: ")
-		leia(largura)
-
-		escreva("Digite o comprimento: ")
-		leia(__LACUNA_1__)
-
-		__LACUNA_2__ = largura * comprimento
-
-		escreva("A área é ", __LACUNA_3__, "m²\\n")
+		real nota
+		escreva("Nota trimestral: ")
+		leia(nota)
+		__LACUNA_1__ (nota __LACUNA_2__ 6.0)
+		{
+			escreva("Aprovado!\\n")
+		}
+		__LACUNA_3__
+		{
+			escreva("Recuperação!\\n")
+		}
 	}
 }`,
     lacunas: [
-      { id: 'LACUNA_1', dica: 'Variável de comprimento', tamanhoVisual: 11 },
-      { id: 'LACUNA_2', dica: 'Variável para guardar a área', tamanhoVisual: 4 },
-      { id: 'LACUNA_3', dica: 'Exibir a variável calculada', tamanhoVisual: 4 },
+      { id: 'LACUNA_1', dica: 'Condicional se verdadeiro', tamanhoVisual: 2 },
+      { id: 'LACUNA_2', dica: 'Operador comparativo maior ou igual', tamanhoVisual: 2 },
+      { id: 'LACUNA_3', dica: 'Palavra-chave executada caso a condição seja falsa', tamanhoVisual: 5 },
     ],
-    respostasCorretas: { LACUNA_1: 'comprimento', LACUNA_2: 'area', LACUNA_3: 'area' },
-    entradaSimulada: ['5', '10'],
-    outputEsperado: 'Digite a largura: 5\nDigite o comprimento: 10\nA área é 50m²',
+    respostasCorretas: { LACUNA_1: 'se', LACUNA_2: '>=', LACUNA_3: 'senao' },
+    entradaSimulada: ['5.5'],
+    outputEsperado: 'Nota trimestral: 5.5\nRecuperação!',
     dificuldade: 'medio',
   },
   {
     id: 'lac-5',
-    titulo: 'Reajuste Salarial',
-    descricao: 'Calcule o novo salário com 12% de aumento.',
+    titulo: 'Seleção de Jogo',
+    descricao: 'Estruture o menu de opções para a escolha de classes de personagem usando Escolha-Caso.',
     xpMaximo: 150,
     codigoTemplate: `programa
 {
 	funcao inicio()
 	{
-		real salario, aumento, novoSalario
-
-		escreva("Digite o salário: ")
-		leia(salario)
-
-		aumento = salario __LACUNA_1__ 0.12
-		__LACUNA_2__ = salario + aumento
-
-		escreva("Novo salário: R$", __LACUNA_3__, "\\n")
+		inteiro classe
+		escreva("1-Guerreiro, 2-Mago: ")
+		leia(classe)
+		__LACUNA_1__ (classe)
+		{
+			__LACUNA_2__ 1:
+				escreva("Guerreiro selecionado!\\n")
+				pare
+			caso 2:
+				escreva("Mago selecionado!\\n")
+				pare
+			caso __LACUNA_3__:
+				escreva("Opção inválida!\\n")
+		}
 	}
 }`,
     lacunas: [
-      { id: 'LACUNA_1', dica: 'Operador para calcular porcentagem', tamanhoVisual: 1 },
-      { id: 'LACUNA_2', dica: 'Variável que recebe o total', tamanhoVisual: 11 },
-      { id: 'LACUNA_3', dica: 'Variável a ser exibida', tamanhoVisual: 11 },
+      { id: 'LACUNA_1', dica: 'Comando de decisão múltipla', tamanhoVisual: 8 },
+      { id: 'LACUNA_2', dica: 'Cláusula de opção individual', tamanhoVisual: 4 },
+      { id: 'LACUNA_3', dica: 'Opção padrão executada se nenhuma outra coincidir', tamanhoVisual: 9 },
     ],
-    respostasCorretas: { LACUNA_1: '*', LACUNA_2: 'novoSalario', LACUNA_3: 'novoSalario' },
-    entradaSimulada: ['1000'],
-    outputEsperado: 'Digite o salário: 1000\nNovo salário: R$1120',
+    respostasCorretas: { LACUNA_1: 'escolha', LACUNA_2: 'caso', LACUNA_3: 'contrario' },
+    entradaSimulada: ['3'],
+    outputEsperado: '1-Guerreiro, 2-Mago: 3\nOpção inválida!',
     dificuldade: 'medio',
   },
   {
     id: 'lac-6',
-    titulo: 'Multa por Velocidade',
-    descricao: 'Determine se o carro foi multado por ultrapassar 80Km/h.',
+    titulo: 'Desconto de Estudante',
+    descricao: 'Verifique a idade do estudante para saber se ele tem direito a ingresso gratuito no evento.',
+    xpMaximo: 150,
+    codigoTemplate: `programa
+{
+	funcao inicio()
+	{
+		inteiro idade
+		escreva("Sua idade: ")
+		leia(idade)
+		se (idade __LACUNA_1__ 18)
+		{
+			escreva("Entrada gratuita!\\n")
+		}
+		__LACUNA_2__
+		{
+			escreva("Entrada inteira: R$ 20\\n")
+		}
+	}
+}`,
+    lacunas: [
+      { id: 'LACUNA_1', dica: 'Operador menor que', tamanhoVisual: 1 },
+      { id: 'LACUNA_2', dica: 'Bloco alternativo senao', tamanhoVisual: 5 },
+    ],
+    respostasCorretas: { LACUNA_1: '<', LACUNA_2: 'senao' },
+    entradaSimulada: ['17'],
+    outputEsperado: 'Sua idade: 17\nEntrada gratuita!',
+    dificuldade: 'medio',
+  },
+  {
+    id: 'lac-7',
+    titulo: 'Multiplicador do 5',
+    descricao: 'Desenvolva um laço de repetição contador do tipo para para rodar a tabuada simples do 5.',
     xpMaximo: 200,
     codigoTemplate: `programa
 {
 	funcao inicio()
 	{
-		real velocidade, multa
-
-		escreva("Digite a velocidade: ")
-		leia(velocidade)
-
-		__LACUNA_1__ (velocidade __LACUNA_2__ 80)
+		inteiro cont, total
+		__LACUNA_1__ (cont = 1; cont __LACUNA_2__ 10; __LACUNA_3__)
 		{
-			multa = (velocidade - 80) * 5
-			escreva("Multado! Valor: R$", multa, "\\n")
-		}
-		__LACUNA_3__
-		{
-			escreva("Dentro do limite.\\n")
+			total = 5 * cont
+			escreva("5 x ", cont, " = ", total, "\\n")
 		}
 	}
 }`,
     lacunas: [
-      { id: 'LACUNA_1', dica: 'Palavra-chave para condição', tamanhoVisual: 2 },
-      { id: 'LACUNA_2', dica: 'Operador maior que', tamanhoVisual: 1 },
-      { id: 'LACUNA_3', dica: 'Caso contrário', tamanhoVisual: 5 },
+      { id: 'LACUNA_1', dica: 'Comando de repetição controlada', tamanhoVisual: 4 },
+      { id: 'LACUNA_2', dica: 'Operador menor ou igual', tamanhoVisual: 2 },
+      { id: 'LACUNA_3', dica: 'Incremento de passo 1 da variável cont', tamanhoVisual: 6 },
     ],
-    respostasCorretas: { LACUNA_1: 'se', LACUNA_2: '>', LACUNA_3: 'senao' },
-    entradaSimulada: ['90'],
-    outputEsperado: 'Digite a velocidade: 90\nMultado! Valor: R$50',
+    respostasCorretas: { LACUNA_1: 'para', LACUNA_2: '<=', LACUNA_3: 'cont++' },
+    entradaSimulada: [],
+    outputEsperado: '5 x 1 = 5\n5 x 2 = 10\n5 x 3 = 15\n5 x 4 = 20\n5 x 5 = 25\n5 x 6 = 30\n5 x 7 = 35\n5 x 8 = 40\n5 x 9 = 45\n5 x 10 = 50',
+    dificuldade: 'dificil',
+  },
+  {
+    id: 'lac-8',
+    titulo: 'Validação de Acesso',
+    descricao: 'Crie um loop de segurança do tipo enquanto para solicitar a senha até que o acesso seja liberado.',
+    xpMaximo: 200,
+    codigoTemplate: `programa
+{
+	funcao inicio()
+	{
+		cadeia chave
+		chave = ""
+		__LACUNA_1__ (chave __LACUNA_2__ "ADS2")
+		{
+			escreva("Chave de acesso: ")
+			leia(chave)
+		}
+		escreva("Acesso __LACUNA_3__!\\n")
+	}
+}`,
+    lacunas: [
+      { id: 'LACUNA_1', dica: 'Estrutura de repetição condicional', tamanhoVisual: 8 },
+      { id: 'LACUNA_2', dica: 'Operador comparativo de diferença', tamanhoVisual: 2 },
+      { id: 'LACUNA_3', dica: 'Mensagem de sucesso', tamanhoVisual: 8 },
+    ],
+    respostasCorretas: { LACUNA_1: 'enquanto', LACUNA_2: '!=', LACUNA_3: 'liberado' },
+    entradaSimulada: ['errado', 'ADS2'],
+    outputEsperado: 'Chave de acesso: errado\nChave de acesso: ADS2\nAcesso liberado!',
     dificuldade: 'dificil',
   },
 ];
