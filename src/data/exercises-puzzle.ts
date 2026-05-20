@@ -4,7 +4,7 @@ export const exerciciosPuzzle: ExercicioPuzzle[] = [
   {
     id: 'puz-1',
     titulo: 'Média de Notas Semestrais',
-    descricao: 'Organize a lógica para calcular a média aritmética simples das duas notas bimestrais.',
+    descricao: 'Organize a lógica para calcular a média aritmética simples das duas notas bimestrais, atentando-se para a quebra de linha no final.',
     xpMaximo: 150,
     codigoTemplate: `programa
 {
@@ -24,18 +24,23 @@ export const exerciciosPuzzle: ExercicioPuzzle[] = [
     blocos: [
       { id: 'b1', conteudo: 'media = (n1 + n2) / 2.0', ehDistrator: false },
       { id: 'b2', conteudo: 'escreva("Média: ", media, "\\n")', ehDistrator: false },
-      { id: 'b3', conteudo: 'media = n1 + n2 / 2.0', ehDistrator: true },
-      { id: 'b4', conteudo: 'leia(media)', ehDistrator: true },
+      { id: 'b3', conteudo: 'media = n1 + n2 / 2.0', ehDistrator: true }, // Distrator de erro aritmético
+      { id: 'b4', conteudo: 'leia(media)', ehDistrator: true }, // Distrator de erro lógico de entrada
+      { id: 'b5', conteudo: 'escreva("Média: ", media)', ehDistrator: true }, // Distrator sem quebra de linha
     ],
     respostasCorretas: { SLOT_1: 'b1', SLOT_2: 'b2' },
     entradaSimulada: [],
     outputEsperado: 'Média: 7',
     dificuldade: 'facil',
+    rank: 'Bronze (Estagiário)',
+    badge: '📐 Mestre da Aritmética',
+    feedbackSucesso: '+150 XP — Média calculada com precedência perfeita!',
+    feedbackErro: 'Cuidado com a fórmula! Lembre-se da ordem de operações e da quebra de linha.',
   },
   {
     id: 'puz-2',
     titulo: 'Soma de Pontos de Fase',
-    descricao: 'Consolide o total de pontos somando os ganhos das duas fases do jogo.',
+    descricao: 'Consolide o total de pontos somando de forma correta os ganhos obtidos nas duas fases do jogo.',
     xpMaximo: 150,
     codigoTemplate: `programa
 {
@@ -55,18 +60,23 @@ export const exerciciosPuzzle: ExercicioPuzzle[] = [
     blocos: [
       { id: 'b1', conteudo: 'total = p1 + p2', ehDistrator: false },
       { id: 'b2', conteudo: 'escreva("Pontos: ", total, "\\n")', ehDistrator: false },
-      { id: 'b3', conteudo: 'total = p1 * p2', ehDistrator: true },
-      { id: 'b4', conteudo: 'leia(total)', ehDistrator: true },
+      { id: 'b3', conteudo: 'total = p1 * p2', ehDistrator: true }, // Multiplica em vez de somar
+      { id: 'b4', conteudo: 'escreva("Pontos: ", total)', ehDistrator: true }, // Sem quebra de linha
+      { id: 'b5', conteudo: 'leia(total)', ehDistrator: true }, // Entrada indevida
     ],
     respostasCorretas: { SLOT_1: 'b1', SLOT_2: 'b2' },
     entradaSimulada: [],
     outputEsperado: 'Pontos: 450',
     dificuldade: 'facil',
+    rank: 'Bronze (Estagiário)',
+    badge: '🪙 Acumulador de Moedas',
+    feedbackSucesso: '+150 XP — Variável total processada e exibida com sucesso!',
+    feedbackErro: 'Revise o cálculo matemático e confira se há quebra de linha (\\n)!',
   },
   {
     id: 'puz-3',
     titulo: 'Antecessor Inteiro',
-    descricao: 'Ordene o processamento aritmético para encontrar e exibir o número anterior de um valor.',
+    descricao: 'Ordene o processamento aritmético para encontrar e exibir o número anterior de um valor dado.',
     xpMaximo: 150,
     codigoTemplate: `programa
 {
@@ -85,18 +95,22 @@ export const exerciciosPuzzle: ExercicioPuzzle[] = [
     blocos: [
       { id: 'b1', conteudo: 'ant = num - 1', ehDistrator: false },
       { id: 'b2', conteudo: 'escreva("Antecessor: ", ant, "\\n")', ehDistrator: false },
-      { id: 'b3', conteudo: 'ant = num + 1', ehDistrator: true },
-      { id: 'b4', conteudo: 'escreva("Sucessor: ", ant, "\\n")', ehDistrator: true },
+      { id: 'b3', conteudo: 'ant = num + 1', ehDistrator: true }, // Calcula sucessor
+      { id: 'b4', conteudo: 'escreva("Antecessor: ", num, "\\n")', ehDistrator: true }, // Exibe número errado
     ],
     respostasCorretas: { SLOT_1: 'b1', SLOT_2: 'b2' },
     entradaSimulada: [],
     outputEsperado: 'Antecessor: 9',
     dificuldade: 'facil',
+    rank: 'Bronze (Estagiário)',
+    badge: '🔙 Passo Atrás',
+    feedbackSucesso: '+150 XP — O antecessor foi deduzido corretamente!',
+    feedbackErro: 'O antecessor deve ser exatamente 1 unidade menor do que o número original!',
   },
   {
     id: 'puz-4',
     titulo: 'Cupom de Desconto Especial',
-    descricao: 'Aplique um abatimento de 10% no valor se o valor da compra for superior a R$ 80.',
+    descricao: 'Monte a condicional para dar 10% de abatimento caso o valor da compra seja maior que R$ 80.',
     xpMaximo: 180,
     codigoTemplate: `programa
 {
@@ -118,20 +132,25 @@ export const exerciciosPuzzle: ExercicioPuzzle[] = [
     ],
     blocos: [
       { id: 'b1', conteudo: 'se (compra > 80.0)', ehDistrator: false },
-      { id: 'b2', conteudo: 'total = compra * 0.90', ehDistrator: false },
+      { id: 'b2', conteudo: 'total = compra * 0.90', ehDistrator: false }, // Abate 10% mantendo 90%
       { id: 'b3', conteudo: 'escreva("Total R$: ", total, "\\n")', ehDistrator: false },
-      { id: 'b4', conteudo: 'se (compra < 80.0)', ehDistrator: true },
-      { id: 'b5', conteudo: 'total = compra * 1.10', ehDistrator: true },
+      { id: 'b4', conteudo: 'se (compra < 80.0)', ehDistrator: true }, // Direção condicional inversa
+      { id: 'b5', conteudo: 'total = compra * 0.10', ehDistrator: true }, // Calcula apenas o desconto
+      { id: 'b6', conteudo: 'total = compra - 10.0', ehDistrator: true }, // Subtração fixa
     ],
     respostasCorretas: { SLOT_1: 'b1', SLOT_2: 'b2', SLOT_3: 'b3' },
     entradaSimulada: [],
     outputEsperado: 'Total R$: 90',
     dificuldade: 'medio',
+    rank: 'Prata (Dev Júnior)',
+    badge: '💸 Economista de Código',
+    feedbackSucesso: '+180 XP — Excelente! Desconto condicional calculado de maneira precisa.',
+    feedbackErro: 'Revise a porcentagem! Multiplicar por 0.90 calcula o total com 10% de abatimento.',
   },
   {
     id: 'puz-5',
     titulo: 'Menu de Seleção Rápida',
-    descricao: 'Construa a lógica de tratamento das escolhas de opções de bebidas usando caso.',
+    descricao: 'Construa a lógica de tratamento das escolhas de opções de bebidas usando a estrutura caso.',
     xpMaximo: 180,
     codigoTemplate: `programa
 {
@@ -159,18 +178,22 @@ export const exerciciosPuzzle: ExercicioPuzzle[] = [
       { id: 'b1', conteudo: 'escolha (opcao)', ehDistrator: false },
       { id: 'b2', conteudo: 'caso 1:', ehDistrator: false },
       { id: 'b3', conteudo: 'caso 2:', ehDistrator: false },
-      { id: 'b4', conteudo: 'se (opcao == 1)', ehDistrator: true },
-      { id: 'b5', conteudo: 'senao:', ehDistrator: true },
+      { id: 'b4', conteudo: 'se (opcao == 2)', ehDistrator: true }, // Inadequado para o bloco caso
+      { id: 'b5', conteudo: 'caso contrario:', ehDistrator: true }, // Distrator indevido aqui
     ],
     respostasCorretas: { SLOT_1: 'b1', SLOT_2: 'b2', SLOT_3: 'b3' },
     entradaSimulada: [],
     outputEsperado: 'Opção Água',
     dificuldade: 'medio',
+    rank: 'Prata (Dev Júnior)',
+    badge: '🍔 Mestre do Cardápio',
+    feedbackSucesso: '+180 XP — Estrutura Escolha-Caso perfeitamente configurada!',
+    feedbackErro: 'Lembre-se da correspondência dos casos: Caso 1 para o primeiro item, Caso 2 para o segundo.',
   },
   {
     id: 'puz-6',
     titulo: 'Validador de Maioridade',
-    descricao: 'Verifique se um usuário com base em sua idade é maior ou menor de idade no Brasil.',
+    descricao: 'Verifique se um usuário é maior ou menor de idade no Brasil usando a condicional composta.',
     xpMaximo: 180,
     codigoTemplate: `programa
 {
@@ -199,18 +222,22 @@ export const exerciciosPuzzle: ExercicioPuzzle[] = [
       { id: 'b2', conteudo: 'escreva("Maior de idade\\n")', ehDistrator: false },
       { id: 'b3', conteudo: 'senao', ehDistrator: false },
       { id: 'b4', conteudo: 'escreva("Menor de idade\\n")', ehDistrator: false },
-      { id: 'b5', conteudo: 'se (idade < 18)', ehDistrator: true },
-      { id: 'b6', conteudo: 'escreva("Erro\\n")', ehDistrator: true },
+      { id: 'b5', conteudo: 'se (idade < 18)', ehDistrator: true }, // Duplicação inútil
+      { id: 'b6', conteudo: 'escreva("Menor de idade")', ehDistrator: true }, // Falta quebra de linha
     ],
     respostasCorretas: { SLOT_1: 'b1', SLOT_2: 'b2', SLOT_3: 'b3', SLOT_4: 'b4' },
     entradaSimulada: [],
     outputEsperado: 'Maior de idade',
     dificuldade: 'medio',
+    rank: 'Prata (Dev Júnior)',
+    badge: '🪪 Guarda Civil',
+    feedbackSucesso: '+180 XP — Condicional composta implementada com maestria!',
+    feedbackErro: 'Verifique o sinal de comparação e as saídas que precisam de quebra de linha.',
   },
   {
     id: 'puz-7',
-    titulo: 'Lados de um Equilátero',
-    descricao: 'Use os operadores lógicos corretos para certificar que todos os 3 lados de um triângulo são iguais.',
+    titulo: 'Condição de Existência de Triângulo',
+    descricao: 'Valide se três medidas lineares podem compor geometricamente um triângulo utilizando operadores lógicos.',
     xpMaximo: 220,
     codigoTemplate: `programa
 {
@@ -224,27 +251,39 @@ export const exerciciosPuzzle: ExercicioPuzzle[] = [
 		{
 			__SLOT_2__
 		}
+		__SLOT_3__
+		{
+			__SLOT_4__
+		}
 	}
 }`,
     slots: [
-      { id: 'SLOT_1', tamanhoVisual: 40 },
+      { id: 'SLOT_1', tamanhoVisual: 45 },
       { id: 'SLOT_2', tamanhoVisual: 35 },
+      { id: 'SLOT_3', tamanhoVisual: 8 },
+      { id: 'SLOT_4', tamanhoVisual: 35 },
     ],
     blocos: [
-      { id: 'b1', conteudo: 'se (a == b e b == c)', ehDistrator: false },
-      { id: 'b2', conteudo: 'escreva("Triângulo Equilátero\\n")', ehDistrator: false },
-      { id: 'b3', conteudo: 'se (a == b ou b == c)', ehDistrator: true },
-      { id: 'b4', conteudo: 'escreva("Triângulo Isósceles\\n")', ehDistrator: true },
+      { id: 'b1', conteudo: 'se (a < b + c e b < a + c e c < a + b)', ehDistrator: false }, // Condição geométrica de existência real
+      { id: 'b2', conteudo: 'escreva("Triângulo válido\\n")', ehDistrator: false },
+      { id: 'b3', conteudo: 'senao', ehDistrator: false },
+      { id: 'b4', conteudo: 'escreva("Triângulo inválido\\n")', ehDistrator: false },
+      { id: 'b5', conteudo: 'se (a == b e b == c)', ehDistrator: true }, // Testa equilátero, não existência geral
+      { id: 'b6', conteudo: 'se (a < b + c ou b < a + c)', ehDistrator: true }, // Operador OU incorreto para existência
     ],
-    respostasCorretas: { SLOT_1: 'b1', SLOT_2: 'b2' },
+    respostasCorretas: { SLOT_1: 'b1', SLOT_2: 'b2', SLOT_3: 'b3', SLOT_4: 'b4' },
     entradaSimulada: [],
-    outputEsperado: 'Triângulo Equilátero',
+    outputEsperado: 'Triângulo válido',
     dificuldade: 'dificil',
+    rank: 'Ouro (Dev Pleno)',
+    badge: '📐 Geômetra do Código',
+    feedbackSucesso: '+220 XP — Excelente! Condição de existência com lógica E aplicada perfeitamente.',
+    feedbackErro: 'Para que um triângulo exista, todos os lados devem ser menores que a soma dos outros dois concomitantemente (E lógico)!',
   },
   {
     id: 'puz-8',
-    titulo: 'Contagem Regressiva Simples',
-    descricao: 'Construa um loop regressivo com decremento para simular o lançamento de um foguete.',
+    titulo: 'Contador Regressivo Controlado',
+    descricao: 'Construa um loop regressivo com decremento para simular a decolagem do foguete sem gerar loops infinitos.',
     xpMaximo: 220,
     codigoTemplate: `programa
 {
@@ -269,12 +308,17 @@ export const exerciciosPuzzle: ExercicioPuzzle[] = [
       { id: 'b1', conteudo: 'enquanto (cont > 0)', ehDistrator: false },
       { id: 'b2', conteudo: 'escreva(cont, "...\\n")', ehDistrator: false },
       { id: 'b3', conteudo: 'cont = cont - 1', ehDistrator: false },
-      { id: 'b4', conteudo: 'enquanto (cont == 0)', ehDistrator: true },
-      { id: 'b5', conteudo: 'cont = cont + 1', ehDistrator: true },
+      { id: 'b4', conteudo: 'enquanto (cont == 0)', ehDistrator: true }, // Condição que nunca entraria
+      { id: 'b5', conteudo: 'cont = cont + 1', ehDistrator: true }, // Laço infinito crescente
+      { id: 'b6', conteudo: 'escreva(cont)', ehDistrator: true }, // Falta pontuação e quebra
     ],
     respostasCorretas: { SLOT_1: 'b1', SLOT_2: 'b2', SLOT_3: 'b3' },
     entradaSimulada: [],
     outputEsperado: '3...\n2...\n1...\nDecolagem!',
     dificuldade: 'dificil',
+    rank: 'Ouro (Dev Pleno)',
+    badge: '🚀 Engenheiro Espacial',
+    feedbackSucesso: '+220 XP — Fantástico! Evitou um loop infinito e realizou a contagem decrescente com precisão.',
+    feedbackErro: 'No loop regressivo, a variável de controle precisa diminuir (decrementar) a cada volta.',
   },
 ];

@@ -116,10 +116,10 @@ export default function QuebracabecaPage() {
       if (semErros) bonuses.push('⭐ Bônus por 1ª tentativa!');
       setTotalXP(prev => prev + xp);
       setAcertos(prev => prev + 1);
-      setFeedback({ show: true, correct: true, xp, bonuses, msg: `Saída: ${saidaStr}` });
+      setFeedback({ show: true, correct: true, xp, bonuses, msg: ex.feedbackSucesso || `Saída: ${saidaStr}` });
     } else {
       playError();
-      if (wrongSlots.size > 0) setErrorMsg(`Há ${wrongSlots.size} bloco(s) no lugar errado.`);
+      if (wrongSlots.size > 0) setErrorMsg(ex.feedbackErro || `Há ${wrongSlots.size} bloco(s) no lugar errado.`);
       else setErrorMsg(`Saída incorreta. Esperado: "${ex.outputEsperado}", obtido: "${saidaStr}"`);
     }
   };
@@ -192,7 +192,20 @@ export default function QuebracabecaPage() {
         <AnimatePresence mode="wait">
           <motion.div key={ex.id} initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -50, opacity: 0 }}>
             <div className="mt-6 mb-4">
-              <h2 className="text-2xl font-bold mb-1">{ex.titulo}</h2>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <h2 className="text-2xl font-bold">{ex.titulo}</h2>
+                <span className={`badge ${ex.dificuldade === 'facil' ? 'badge-success' : ex.dificuldade === 'medio' ? 'badge-warning' : 'badge-error'}`}>{ex.dificuldade}</span>
+                {ex.rank && (
+                  <span className="badge text-xs font-semibold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border-none">
+                    🏆 {ex.rank}
+                  </span>
+                )}
+                {ex.badge && (
+                  <span className="badge text-xs font-semibold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border-none">
+                    {ex.badge}
+                  </span>
+                )}
+              </div>
               <p style={{ color: 'var(--text-secondary)' }}>{ex.descricao}</p>
             </div>
 

@@ -51,6 +51,10 @@ export interface ExercicioLacuna {
   entradaSimulada: string[];
   outputEsperado: string;
   dificuldade: 'facil' | 'medio' | 'dificil';
+  rank?: string;
+  badge?: string;
+  feedbackSucesso?: string;
+  feedbackErro?: string;
 }
 
 // --- Minigame 2: Quebra-Cabeça ---
@@ -78,6 +82,10 @@ export interface ExercicioPuzzle {
   entradaSimulada: string[];
   outputEsperado: string;
   dificuldade: 'facil' | 'medio' | 'dificil';
+  rank?: string;
+  badge?: string;
+  feedbackSucesso?: string;
+  feedbackErro?: string;
 }
 
 // --- Minigame 3: Quiz ---
@@ -99,6 +107,10 @@ export interface Pergunta {
   tempoBonusSegundos?: number;
   dificuldade: 'facil' | 'medio' | 'dificil';
   categoria: string;
+  rank?: string;
+  badge?: string;
+  feedbackSucesso?: string;
+  feedbackErro?: string;
 }
 
 // --- Interpretador Portugol ---

@@ -98,11 +98,11 @@ export default function LacunasPage() {
       if (semErros) { bonuses.push('⭐ Bônus por 1ª tentativa!'); adicionarBadge('🎯 Primeiro Acerto'); }
       setTotalXP(prev => prev + xp);
       setAcertos(prev => prev + 1);
-      setFeedback({ show: true, correct: true, xp, bonuses, msg: `Saída: ${saidaStr}` });
+      setFeedback({ show: true, correct: true, xp, bonuses, msg: ex.feedbackSucesso || `Saída: ${saidaStr}` });
     } else {
       playError();
       setFeedback({ show: false, correct: false, xp: 0, bonuses: [], msg: '' });
-      if (wrongIds.size > 0) setErrorMsg(`Há ${wrongIds.size} lacuna(s) incorreta(s). Verifique os campos em vermelho.`);
+      if (wrongIds.size > 0) setErrorMsg(ex.feedbackErro || `Há ${wrongIds.size} lacuna(s) incorreta(s). Verifique os campos em vermelho.`);
       else setErrorMsg(`Saída incorreta. Esperado: "${esperado}", obtido: "${saidaStr}"`);
     }
   };
@@ -168,9 +168,19 @@ export default function LacunasPage() {
         <AnimatePresence mode="wait">
           <motion.div key={ex.id} initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -50, opacity: 0 }} transition={{ duration: 0.3 }}>
             <div className="mt-6 mb-4">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 <h2 className="text-2xl font-bold">{ex.titulo}</h2>
                 <span className={`badge ${ex.dificuldade === 'facil' ? 'badge-success' : ex.dificuldade === 'medio' ? 'badge-warning' : 'badge-error'}`}>{ex.dificuldade}</span>
+                {ex.rank && (
+                  <span className="badge text-xs font-semibold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border-none">
+                    🏆 {ex.rank}
+                  </span>
+                )}
+                {ex.badge && (
+                  <span className="badge text-xs font-semibold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border-none">
+                    {ex.badge}
+                  </span>
+                )}
               </div>
               <p style={{ color: 'var(--text-secondary)' }}>{ex.descricao}</p>
             </div>

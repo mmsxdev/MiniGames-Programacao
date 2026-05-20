@@ -4,7 +4,7 @@ export const exerciciosLacunas: ExercicioLacuna[] = [
   {
     id: 'lac-1',
     titulo: 'Boas-Vindas da Escola',
-    descricao: 'Leia o nome do aluno e exiba uma mensagem de recepção no Portugol Games.',
+    descricao: 'Leia o nome do aluno e exiba uma mensagem de recepção personalizada no Portugol Games.',
     xpMaximo: 100,
     codigoTemplate: `programa
 {
@@ -25,11 +25,15 @@ export const exerciciosLacunas: ExercicioLacuna[] = [
     entradaSimulada: ['Lucas'],
     outputEsperado: 'Qual o seu nome? Lucas\nOlá, Lucas! Bem-vindo ao Portugol Games.',
     dificuldade: 'facil',
+    rank: 'Bronze (Estagiário)',
+    badge: '👋 Boas-Vindas',
+    feedbackSucesso: '+100 XP — Excelente! Variáveis de texto e entrada/saída básicas consolidadas!',
+    feedbackErro: 'Dica: Em Portugol, texto é do tipo "cadeia" e a leitura é feita com o comando "leia".',
   },
   {
     id: 'lac-2',
     titulo: 'Contador de Lanches',
-    descricao: 'Calcule o total de itens consumidos na cantina somando coxinha e suco.',
+    descricao: 'Calcule o total de itens consumidos na cantina somando a quantidade de coxinhas e sucos.',
     xpMaximo: 100,
     codigoTemplate: `programa
 {
@@ -51,11 +55,15 @@ export const exerciciosLacunas: ExercicioLacuna[] = [
     entradaSimulada: [],
     outputEsperado: 'Total de itens: 5',
     dificuldade: 'facil',
+    rank: 'Bronze (Estagiário)',
+    badge: '🥪 Lanchonete de Lógica',
+    feedbackSucesso: '+100 XP — Lógica afiada! Operador aritmético e variáveis inteiras associadas corretamente!',
+    feedbackErro: 'Dica: Use "inteiro" para o tipo numérico sem decimais e "+" para somar as quantidades.',
   },
   {
     id: 'lac-3',
     titulo: 'Resto da Divisão',
-    descricao: 'Descubra se um número é divisível obtendo o resto da divisão por 2.',
+    descricao: 'Descubra se um número é divisível obtendo o resto da sua divisão inteira por 2.',
     xpMaximo: 100,
     codigoTemplate: `programa
 {
@@ -76,6 +84,10 @@ export const exerciciosLacunas: ExercicioLacuna[] = [
     entradaSimulada: ['9'],
     outputEsperado: 'Número: 9\nResto encontrado: 1',
     dificuldade: 'facil',
+    rank: 'Bronze (Estagiário)',
+    badge: '🔢 Mestre dos Restos',
+    feedbackSucesso: '+100 XP — Fluxo correto! Módulo aritmético compreendido com sucesso!',
+    feedbackErro: 'Dica: O operador aritmético de resto da divisão (módulo) em Portugol é representado pelo símbolo "%".',
   },
   {
     id: 'lac-4',
@@ -108,6 +120,10 @@ export const exerciciosLacunas: ExercicioLacuna[] = [
     entradaSimulada: ['5.5'],
     outputEsperado: 'Nota trimestral: 5.5\nRecuperação!',
     dificuldade: 'medio',
+    rank: 'Prata (Dev Júnior)',
+    badge: '🏫 Conselho de Classe',
+    feedbackSucesso: '+150 XP — Desvio condicional se-senao implementado com maestria!',
+    feedbackErro: 'Dica: O bloco condicional básico inicia-se com "se", seguido de operador comparativo (ex: >=) e o bloco alternativo "senao".',
   },
   {
     id: 'lac-5',
@@ -143,6 +159,10 @@ export const exerciciosLacunas: ExercicioLacuna[] = [
     entradaSimulada: ['3'],
     outputEsperado: '1-Guerreiro, 2-Mago: 3\nOpção inválida!',
     dificuldade: 'medio',
+    rank: 'Prata (Dev Júnior)',
+    badge: '🎮 Gamer de Estruturas',
+    feedbackSucesso: '+150 XP — Decisão de fluxo por escolha e casos estabelecida perfeitamente!',
+    feedbackErro: 'Dica: Lembre-se das palavras reservadas: "escolha", "caso" e "contrario".',
   },
   {
     id: 'lac-6',
@@ -174,6 +194,10 @@ export const exerciciosLacunas: ExercicioLacuna[] = [
     entradaSimulada: ['17'],
     outputEsperado: 'Sua idade: 17\nEntrada gratuita!',
     dificuldade: 'medio',
+    rank: 'Prata (Dev Júnior)',
+    badge: '🎟️ Bilheteiro de Código',
+    feedbackSucesso: '+150 XP — Operador relacional e fluxo condicional senao conectados com clareza!',
+    feedbackErro: 'Dica: Para verificar se a idade está abaixo do limite, use "<". O bloco alternativo é o "senao".',
   },
   {
     id: 'lac-7',
@@ -201,6 +225,10 @@ export const exerciciosLacunas: ExercicioLacuna[] = [
     entradaSimulada: [],
     outputEsperado: '5 x 1 = 5\n5 x 2 = 10\n5 x 3 = 15\n5 x 4 = 20\n5 x 5 = 25\n5 x 6 = 30\n5 x 7 = 35\n5 x 8 = 40\n5 x 9 = 45\n5 x 10 = 50',
     dificuldade: 'dificil',
+    rank: 'Ouro (Dev Pleno)',
+    badge: '🌀 Senhor das Voltas',
+    feedbackSucesso: '+200 XP — Espetacular! Tabuada concluída com controle perfeito do laço para!',
+    feedbackErro: 'Dica: O cabeçalho do laço "para" requer inicialização, condição com operador de comparação (ex: <=) e o passo de incremento (ex: cont++).',
   },
   {
     id: 'lac-8',
@@ -230,5 +258,9 @@ export const exerciciosLacunas: ExercicioLacuna[] = [
     entradaSimulada: ['errado', 'ADS2'],
     outputEsperado: 'Chave de acesso: errado\nChave de acesso: ADS2\nAcesso liberado!',
     dificuldade: 'dificil',
+    rank: 'Ouro (Dev Pleno)',
+    badge: '🔑 Sentinela Digital',
+    feedbackSucesso: '+200 XP — Excelente! Bloqueio de acesso por loop e verificação lógica efetuados com maestria.',
+    feedbackErro: 'Dica: Use "enquanto" para continuar pedindo a senha enquanto ela for diferente ("!=") da chave correta.',
   },
 ];

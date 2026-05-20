@@ -140,8 +140,20 @@ export default function QuizPage() {
         <AnimatePresence mode="wait">
           <motion.div key={q.id} initial={{ x: 60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -60, opacity: 0 }} transition={{ duration: 0.3 }}>
             <div className="card mb-4" style={{ cursor: 'default' }}>
-              <div className="flex items-center justify-between mb-3">
-                <span className={`badge ${q.dificuldade === 'facil' ? 'badge-success' : q.dificuldade === 'medio' ? 'badge-warning' : 'badge-error'}`}>{q.dificuldade}</span>
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`badge ${q.dificuldade === 'facil' ? 'badge-success' : q.dificuldade === 'medio' ? 'badge-warning' : 'badge-error'}`}>{q.dificuldade}</span>
+                  {q.rank && (
+                    <span className="badge text-xs font-semibold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border-none">
+                      🏆 {q.rank}
+                    </span>
+                  )}
+                  {q.badge && (
+                    <span className="badge text-xs font-semibold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border-none">
+                      {q.badge}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{q.categoria}</span>
                   {q.tempoBonusSegundos && !answered && (
