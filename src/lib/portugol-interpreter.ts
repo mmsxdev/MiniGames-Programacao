@@ -256,20 +256,51 @@ class Parser {
   }
 
   parsePara(): ASTNode {
-    const line = this.advance().line;
+    const line = this.advance().line; // skip 'para'
     this.expect('LPAREN');
-    const varName = this.expect('ID').value;
-    this.expect('KW','de');
-    const from = this.parseExpr();
-    this.expect('KW','ate');
-    const to = this.parseExpr();
-    let step: ASTNode|null = null;
-    if (this.match('KW','passo')) step = this.parseExpr();
-    this.expect('RPAREN');
-    this.expect('LBRACE');
-    const body = this.parseBlock();
-    this.expect('RBRACE');
-    return { kind:'para', varName, from, to, step, body, line };
+    
+    // Identifica se a sintaxe é estilo C (tem '=') ou clássica (tem 'de')
+    const next2 = this.tokens[this.pos + 1];
+    
+    if (next2 && next2.type === 'ASSIGN' && next2.value === '=') {
+      // Sintaxe Estilo C: para (cont = 1; cont <= 10; cont++)
+      const varName = this.expect('ID').value;
+      this.expect('ASSIGN', '=');
+      const from = this.parseExpr();
+      this.expect('SEMI');
+      
+      const cond = this.parseExpr();
+      let to: ASTNode = { kind: 'num', value: 10, line };
+      if (cond.kind === 'binop') {
+        to = cond.right;
+      }
+      this.expect('SEMI');
+      
+      // Consome a expressão de incremento até fechar o parêntese
+      while (this.peek().type !== 'RPAREN' && this.peek().type !== 'EOF') {
+        this.advance();
+      }
+      this.expect('RPAREN');
+      this.expect('LBRACE');
+      const body = this.parseBlock();
+      this.expect('RBRACE');
+      
+      return { kind: 'para', varName, from, to, step: null, body, line };
+    } else {
+      // Sintaxe Clássica: para (cont de 1 ate 10)
+      const varName = this.expect('ID').value;
+      this.expect('KW','de');
+      const from = this.parseExpr();
+      this.expect('KW','ate');
+      const to = this.parseExpr();
+      let step: ASTNode|null = null;
+      if (this.match('KW','passo')) step = this.parseExpr();
+      this.expect('RPAREN');
+      this.expect('LBRACE');
+      const body = this.parseBlock();
+      this.expect('RBRACE');
+      return { kind:'para', varName, from, to, step, body, line };
+    }
   }
 
   parseFaca(): ASTNode {
