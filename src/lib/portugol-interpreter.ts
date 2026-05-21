@@ -67,6 +67,7 @@ function tokenize(code: string): Token[] {
     if (src[i] === '{') { tokens.push({type:'LBRACE',value:'{',line}); i++; continue; }
     if (src[i] === '}') { tokens.push({type:'RBRACE',value:'}',line}); i++; continue; }
     if (src[i] === ',') { tokens.push({type:'COMMA',value:',',line}); i++; continue; }
+    if (src[i] === ';') { tokens.push({type:'SEMI',value:';',line}); i++; continue; }
     if (src[i] === '[') { tokens.push({type:'LPAREN',value:'[',line}); i++; continue; }
     if (src[i] === ']') { tokens.push({type:'RPAREN',value:']',line}); i++; continue; }
     // Skip unknown
