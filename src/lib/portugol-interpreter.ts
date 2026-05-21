@@ -87,6 +87,7 @@ type ASTNode =
   | { kind:'enquanto'; cond: ASTNode; body: ASTNode[]; line: number }
   | { kind:'para'; varName: string; from: ASTNode; to: ASTNode; step: ASTNode|null; body: ASTNode[]; line: number }
   | { kind:'faca'; body: ASTNode[]; cond: ASTNode; line: number }
+  | { kind:'escolha'; expr: ASTNode; casos: { valor: ASTNode|null; body: ASTNode[] }[]; line: number }
   | { kind:'binop'; op: string; left: ASTNode; right: ASTNode; line: number }
   | { kind:'unaryNot'; expr: ASTNode; line: number }
   | { kind:'num'; value: number; line: number }
@@ -146,6 +147,7 @@ class Parser {
         case 'enquanto': return this.parseEnquanto();
         case 'para': return this.parsePara();
         case 'faca': return this.parseFaca();
+        case 'escolha': return this.parseEscolha();
         case 'escreva': case 'escreval': return this.parseEscreva();
         case 'leia': return this.parseLeia();
         case 'retorne': this.advance(); this.parseExpr(); return {kind:'noop'};
@@ -280,6 +282,38 @@ class Parser {
     const cond = this.parseExpr();
     this.expect('RPAREN');
     return { kind:'faca', body, cond, line };
+  }
+
+  parseEscolha(): ASTNode {
+    const line = this.advance().line; // skip 'escolha'
+    this.expect('LPAREN');
+    const expr = this.parseExpr();
+    this.expect('RPAREN');
+    this.expect('LBRACE');
+    const casos: { valor: ASTNode|null; body: ASTNode[] }[] = [];
+    while (this.peek().type !== 'RBRACE' && this.peek().type !== 'EOF') {
+      const t = this.peek();
+      if (t.type === 'KW' && t.value === 'caso') {
+        this.advance(); // skip 'caso'
+        const next = this.peek();
+        let valor: ASTNode|null = null;
+        if (next.type === 'ID' && next.value === 'contrario') {
+          this.advance(); // skip 'contrario'
+        } else {
+          valor = this.parseExpr();
+        }
+        const body: ASTNode[] = [];
+        while (this.peek().type !== 'RBRACE' && this.peek().type !== 'EOF' && !(this.peek().type === 'KW' && this.peek().value === 'caso')) {
+          const stmt = this.parseStatement();
+          if (stmt.kind !== 'noop') body.push(stmt);
+        }
+        casos.push({ valor, body });
+      } else {
+        this.advance();
+      }
+    }
+    this.expect('RBRACE');
+    return { kind: 'escolha', expr, casos, line };
   }
 
   parseBlock(): ASTNode[] {
@@ -497,6 +531,27 @@ class Evaluator {
       case 'call':
         this.evalCall(node.name, node.args);
         break;
+      case 'escolha': {
+        const val = this.eval(node.expr);
+        let correspondido = false;
+        let casoContrarioNode: { valor: ASTNode|null; body: ASTNode[] } | null = null;
+        for (const c of node.casos) {
+          if (c.valor === null) {
+            casoContrarioNode = c;
+            continue;
+          }
+          const cVal = this.eval(c.valor);
+          if (val === cVal) {
+            correspondido = true;
+            for (const s of c.body) this.run(s);
+            break;
+          }
+        }
+        if (!correspondido && casoContrarioNode) {
+          for (const s of casoContrarioNode.body) this.run(s);
+        }
+        break;
+      }
     }
   }
 
