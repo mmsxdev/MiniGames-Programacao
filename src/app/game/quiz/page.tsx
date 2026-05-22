@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, CheckCircle, XCircle, Zap } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Zap, SkipForward, ArrowLeftCircle } from 'lucide-react';
 import { quizQuestions } from '@/data/quiz-questions';
 import { carregarQuizCustom } from '@/lib/custom-exercises';
 import { Pergunta } from '@/types';
@@ -10,6 +10,15 @@ import { BONUS } from '@/lib/scoring';
 import { getPerfil, salvarResultado, adicionarBadge } from '@/lib/storage';
 import { ScoreBar } from '@/components/game/ScoreBar';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { QuestionNav } from '@/components/game/QuestionNav';
+import { ResumeModal } from '@/components/game/ResumeModal';
+import { 
+  salvarProgresso, 
+  carregarProgresso, 
+  limparProgresso, 
+  buildStatuses, 
+  RespostaQuestao 
+} from '@/lib/progress';
 
 // Função utilitária externa pura para manter o render React determinístico
 const obterTempoAtual = () => Date.now();
@@ -29,6 +38,13 @@ export default function QuizPage() {
   const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const startTimeRef = useRef(0);
   const [allQuestions, setAllQuestions] = useState<Pergunta[]>(quizQuestions);
+  
+  // Novos estados para progresso
+  const [showResume, setShowResume] = useState(false);
+  const [respostas, setRespostas] = useState<Record<number, RespostaQuestao>>({});
+  const [selectedPerQ, setSelectedPerQ] = useState<Record<number, string | null>>({});
+  const [answeredPerQ, setAnsweredPerQ] = useState<Record<number, boolean>>({});
+  const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false);
 
   const q = allQuestions[idx];
 
@@ -36,21 +52,55 @@ export default function QuizPage() {
     if (!getPerfil()) { router.push('/'); return; }
     startTimeRef.current = obterTempoAtual();
     carregarQuizCustom().then(custom => {
+      let loadedQuestions = quizQuestions;
       if (custom.length > 0) {
-        setAllQuestions([...quizQuestions, ...custom]);
+        loadedQuestions = [...quizQuestions, ...custom];
+        setAllQuestions(loadedQuestions);
+      }
+      
+      const prog = carregarProgresso('quiz');
+      if (prog && prog.totalQuestoes === loadedQuestions.length) {
+        setShowResume(true);
       }
     });
   }, [router]);
 
   useEffect(() => {
-    if (done) return;
-    startTimeRef.current = obterTempoAtual();
-    timerRef.current = setInterval(() => setQTimer(t => t + 1), 1000);
+    if (done || showResume) return;
+    
+    // Só roda o timer se a questão não foi respondida nem pulada
+    if (!answeredPerQ[idx] && !(respostas[idx]?.pulada)) {
+      startTimeRef.current = obterTempoAtual();
+      timerRef.current = setInterval(() => setQTimer(t => t + 1), 1000);
+    } else {
+      setQTimer(0);
+    }
+    
     return () => clearInterval(timerRef.current);
-  }, [idx, done]);
+  }, [idx, done, showResume, answeredPerQ, respostas]);
+
+  const saveCurrentState = (targetIdx: number, currentRespostas: Record<number, RespostaQuestao>, currentSelected: Record<number, string | null>) => {
+    const prog = {
+      minigame: 'quiz' as const,
+      questaoAtual: targetIdx,
+      totalQuestoes: allQuestions.length,
+      respostas: currentRespostas,
+      xpAcumulado: totalXP,
+      acertos,
+      iniciadoEm: new Date().toISOString(),
+      ultimaAtualizacaoEm: new Date().toISOString(),
+    };
+    // Save selected values inside respostas to be loaded easily
+    Object.keys(currentSelected).forEach(k => {
+      if (prog.respostas[Number(k)]) {
+        prog.respostas[Number(k)].valorResposta = currentSelected[Number(k)];
+      }
+    });
+    salvarProgresso(prog);
+  };
 
   const handleSelect = (optId: string) => {
-    if (answered) return;
+    if (answered || answeredPerQ[idx]) return;
     setSelected(optId);
     setAnswered(true);
     clearInterval(timerRef.current);
@@ -60,36 +110,161 @@ export default function QuizPage() {
     const elapsed = (obterTempoAtual() - startTimeRef.current) / 1000;
     const wasRapido = q.tempoBonusSegundos ? elapsed <= q.tempoBonusSegundos : false;
 
+    let xpGanho = 0;
+    let newStreak = streak;
+    
     if (isCorrect) {
       setAcertos(prev => prev + 1);
-      const newStreak = streak + 1;
+      newStreak = streak + 1;
       setStreak(newStreak);
       setMaxStreak(prev => Math.max(prev, newStreak));
-      let xpGanho = q.xpBase;
+      xpGanho = q.xpBase;
       if (wasRapido) xpGanho += BONUS.rapido;
       xpGanho += newStreak * BONUS.streakCorreta;
       setTotalXP(prev => prev + xpGanho);
     } else {
       setStreak(0);
     }
-    setResults(prev => [...prev, isCorrect]);
+    
+    const newResults = [...results, isCorrect];
+    setResults(newResults);
+    
+    const newSelectedPerQ = { ...selectedPerQ, [idx]: optId };
+    setSelectedPerQ(newSelectedPerQ);
+    
+    const newAnsweredPerQ = { ...answeredPerQ, [idx]: true };
+    setAnsweredPerQ(newAnsweredPerQ);
+    
+    const newRespostas = { ...respostas, [idx]: { respondida: true, pulada: false, correta: isCorrect, xpGanho, tentativas: 1, valorResposta: optId } };
+    setRespostas(newRespostas);
+    
+    saveCurrentState(idx, newRespostas, newSelectedPerQ);
+  };
+
+  const getNextUnanswered = (startIdx: number) => {
+    for (let i = startIdx; i < allQuestions.length; i++) {
+      if (!respostas[i] || (!respostas[i].respondida && !respostas[i].pulada)) return i;
+    }
+    return -1;
+  };
+
+  const finalizeGame = () => {
+    setDone(true);
+    clearInterval(timerRef.current);
+    const totalTime = Math.round((obterTempoAtual() - startTimeRef.current) / 1000);
+    
+    // Contabiliza acertos das respostas salvas para garantir precisão
+    const finalAcertos = Object.values(respostas).filter(r => r.correta).length;
+    
+    salvarResultado('quiz', { completadoEm: new Date().toISOString(), xpGanho: totalXP, tentativas: 1, acertos: finalAcertos, totalQuestoes: allQuestions.length, tempoSegundos: totalTime });
+    if (finalAcertos === allQuestions.length) adicionarBadge('🧠 Mestre do Quiz');
+    if (maxStreak >= 5) adicionarBadge('🔥 Em Chamas');
+    limparProgresso('quiz');
   };
 
   const handleNext = () => {
-    setSelected(null);
-    setAnswered(false);
-    if (idx < allQuestions.length - 1) {
-      setIdx(idx + 1);
-      setQTimer(0); // Reseta o cronômetro da pergunta no evento de transição, evitando cascading render no useEffect
+    const nextIdx = getNextUnanswered(idx + 1) !== -1 ? getNextUnanswered(idx + 1) : getNextUnanswered(0);
+    
+    if (nextIdx !== -1) {
+      navigateTo(nextIdx);
     } else {
-      setDone(true);
-      clearInterval(timerRef.current);
-      const finalAcertos = acertos + (results[results.length - 1] ? 0 : 0); // already counted
-      const totalTime = Math.round((obterTempoAtual() - startTimeRef.current) / 1000);
-      salvarResultado('quiz', { completadoEm: new Date().toISOString(), xpGanho: totalXP, tentativas: 1, acertos: finalAcertos, totalQuestoes: allQuestions.length, tempoSegundos: totalTime });
-      if (finalAcertos === allQuestions.length) adicionarBadge('🧠 Mestre do Quiz');
-      if (maxStreak >= 5) adicionarBadge('🔥 Em Chamas');
+      const hasSkipped = Object.values(respostas).some(r => r.pulada);
+      if (hasSkipped) {
+         setShowFinalizeConfirm(true);
+      } else {
+         finalizeGame();
+      }
     }
+  };
+
+  const handleSkip = () => {
+    clearInterval(timerRef.current);
+    
+    const newSelectedPerQ = { ...selectedPerQ, [idx]: selected };
+    setSelectedPerQ(newSelectedPerQ);
+    
+    const newRespostas = { ...respostas, [idx]: { respondida: false, pulada: true, correta: null, xpGanho: 0, tentativas: 0, valorResposta: selected } };
+    setRespostas(newRespostas);
+    
+    let nextIdx = idx + 1;
+    if (nextIdx >= allQuestions.length) {
+      nextIdx = getNextUnanswered(0);
+      if (nextIdx === -1 || nextIdx === idx) {
+         saveCurrentState(idx, newRespostas, newSelectedPerQ);
+         setShowFinalizeConfirm(true);
+         return;
+      }
+    }
+    
+    saveCurrentState(nextIdx, newRespostas, newSelectedPerQ);
+    navigateTo(nextIdx);
+  };
+
+  const handlePrevious = () => {
+    if (idx > 0) {
+      navigateTo(idx - 1);
+    }
+  };
+
+  const navigateTo = (targetIdx: number) => {
+    clearInterval(timerRef.current);
+    
+    // Se a questão alvo já foi respondida, carrega o estado
+    const isTargetAnswered = answeredPerQ[targetIdx] || (respostas[targetIdx]?.respondida === true);
+    
+    // Se for pulada, permite responder normalmente
+    const isTargetSkipped = respostas[targetIdx]?.pulada === true;
+    
+    setSelected(selectedPerQ[targetIdx] || null);
+    setAnswered(isTargetAnswered);
+    
+    // Se estava pulada, ao navegar de volta desmarcamos como pulada para que o timer rode
+    if (isTargetSkipped) {
+      const newRespostas = { ...respostas };
+      delete newRespostas[targetIdx];
+      setRespostas(newRespostas);
+    }
+    
+    setQTimer(0);
+    setIdx(targetIdx);
+    
+    saveCurrentState(targetIdx, respostas, selectedPerQ);
+  };
+
+  const handleMenu = () => {
+    saveCurrentState(idx, respostas, selectedPerQ);
+    router.push('/menu');
+  };
+
+  const handleContinue = () => {
+    const prog = carregarProgresso('quiz');
+    if (prog) {
+      setIdx(prog.questaoAtual);
+      setTotalXP(prog.xpAcumulado);
+      setAcertos(prog.acertos);
+      setRespostas(prog.respostas);
+      
+      const loadedSelected: Record<number, string | null> = {};
+      const loadedAnswered: Record<number, boolean> = {};
+      
+      Object.entries(prog.respostas).forEach(([k, v]) => {
+        if (v.valorResposta) loadedSelected[Number(k)] = v.valorResposta as string;
+        if (v.respondida) loadedAnswered[Number(k)] = true;
+      });
+      
+      setSelectedPerQ(loadedSelected);
+      setAnsweredPerQ(loadedAnswered);
+      
+      const isCurrentAnswered = loadedAnswered[prog.questaoAtual] || false;
+      setSelected(loadedSelected[prog.questaoAtual] || null);
+      setAnswered(isCurrentAnswered);
+    }
+    setShowResume(false);
+  };
+
+  const handleRestart = () => {
+    limparProgresso('quiz');
+    setShowResume(false);
   };
 
   if (done) {
@@ -106,12 +281,19 @@ export default function QuizPage() {
           <p className="text-lg mb-2">{acertos}/{allQuestions.length} acertos</p>
           <div className="text-2xl font-bold mb-4" style={{ color: 'var(--primary-light)' }}>+{totalXP} XP</div>
           <div className="flex flex-col gap-1 mb-6 text-left max-h-48 overflow-y-auto">
-            {allQuestions.map((q, i) => (
-              <div key={q.id} className="flex items-center gap-2 text-sm py-1">
-                {results[i] ? <CheckCircle size={16} style={{ color: 'var(--success)', flexShrink: 0 }} /> : <XCircle size={16} style={{ color: 'var(--error)', flexShrink: 0 }} />}
-                <span className="truncate">{q.enunciado}</span>
-              </div>
-            ))}
+            {allQuestions.map((q, i) => {
+              const resp = respostas[i];
+              let icon = <XCircle size={16} style={{ color: 'var(--error)', flexShrink: 0 }} />;
+              if (resp?.correta) icon = <CheckCircle size={16} style={{ color: 'var(--success)', flexShrink: 0 }} />;
+              else if (resp?.pulada) icon = <SkipForward size={16} style={{ color: '#f59e0b', flexShrink: 0 }} />;
+              
+              return (
+                <div key={q.id} className="flex items-center gap-2 text-sm py-1">
+                  {icon}
+                  <span className="truncate">{q.enunciado}</span>
+                </div>
+              );
+            })}
           </div>
           <div className="flex gap-3">
             <button className="btn btn-secondary flex-1" onClick={() => router.push('/menu')}>Menu</button>
@@ -122,18 +304,23 @@ export default function QuizPage() {
     );
   }
 
+  const statuses = buildStatuses(allQuestions.length, idx, respostas);
+
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      <header className="flex items-center justify-between p-4 max-w-3xl mx-auto">
-        <button className="btn btn-secondary btn-sm" onClick={() => router.push('/menu')}><ArrowLeft size={16} /> Menu</button>
-        <div className="flex items-center gap-3">
-          <span className="badge badge-primary">{idx + 1}/{allQuestions.length}</span>
-          {streak > 1 && <span className="badge badge-warning">🔥 {streak}x streak</span>}
-          <ThemeToggle />
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-primary)' }}>
+      <header className="flex flex-col gap-2 p-4 max-w-3xl mx-auto w-full">
+        <div className="flex items-center justify-between">
+          <button className="btn btn-secondary btn-sm" onClick={handleMenu}><ArrowLeft size={16} /> Menu</button>
+          <div className="flex items-center gap-3">
+            <span className="badge badge-primary">{idx + 1}/{allQuestions.length}</span>
+            {streak > 1 && <span className="badge badge-warning">🔥 {streak}x streak</span>}
+            <ThemeToggle />
+          </div>
         </div>
+        <QuestionNav total={allQuestions.length} current={idx} statuses={statuses} onNavigate={navigateTo} />
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 pb-8">
+      <main className="max-w-3xl mx-auto px-4 pb-8 w-full flex-1">
         <ScoreBar xp={totalXP} maxXP={750} label="XP Acumulado" />
         <div className="progress-bar mt-2 mb-6"><div className="progress-fill" style={{ width: `${((idx + 1) / allQuestions.length) * 100}%` }} /></div>
 
@@ -185,16 +372,52 @@ export default function QuizPage() {
               })}
             </div>
 
-            {answered && (
-              <motion.div className="mt-4" initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-                <button className="btn btn-primary w-full" onClick={handleNext}>
-                  {idx < allQuestions.length - 1 ? 'Próxima Pergunta →' : '🏆 Ver Resultado'}
+            <div className="flex flex-wrap items-center justify-between gap-3 mt-6">
+              <div className="flex gap-2">
+                <button className="btn btn-secondary" onClick={handlePrevious} disabled={idx === 0}>
+                  <ArrowLeftCircle size={18} /> Anterior
                 </button>
-              </motion.div>
+                
+                {!answered && (
+                   <button className="btn btn-secondary" onClick={handleSkip}>
+                     Pular <SkipForward size={18} />
+                   </button>
+                )}
+              </div>
+
+              {answered && (
+                <div className="flex-1 max-w-xs">
+                  <button className="btn btn-primary w-full" onClick={handleNext}>
+                    {getNextUnanswered(idx + 1) !== -1 || getNextUnanswered(0) !== -1 ? 'Próxima Pergunta →' : '🏆 Finalizar'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {showFinalizeConfirm && (
+               <motion.div className="mt-6 card border-warning" initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+                 <h3 className="font-bold text-lg mb-2 flex items-center gap-2"><CheckCircle style={{color: 'var(--warning)'}}/> Finalizar Quiz?</h3>
+                 <p className="mb-4" style={{color: 'var(--text-secondary)'}}>Você pulou algumas questões. Tem certeza que deseja finalizar agora? Questões puladas não darão XP.</p>
+                 <div className="flex gap-3">
+                   <button className="btn btn-secondary flex-1" onClick={() => setShowFinalizeConfirm(false)}>Voltar e Revisar</button>
+                   <button className="btn btn-primary flex-1 bg-warning hover:bg-warning/80 text-black border-none" onClick={finalizeGame}>Finalizar Mesmo Assim</button>
+                 </div>
+               </motion.div>
             )}
+
           </motion.div>
         </AnimatePresence>
       </main>
+      
+      <ResumeModal 
+        show={showResume} 
+        minigame="quiz" 
+        questaoAtual={idx} 
+        totalQuestoes={allQuestions.length} 
+        xpAcumulado={totalXP} 
+        onContinue={handleContinue} 
+        onRestart={handleRestart} 
+      />
     </div>
   );
 }

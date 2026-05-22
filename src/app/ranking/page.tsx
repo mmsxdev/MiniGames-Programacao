@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Download, Upload, Search, Trophy } from 'lucide-react';
+import { ArrowLeft, Download, Upload, Search, Trophy, Loader2 } from 'lucide-react';
 import { getRankingsOrdenados, importarRankings } from '@/lib/storage';
 import { exportarRankingXLSX, importarRankingXLSX } from '@/lib/export';
 import { PerfilAluno } from '@/types';
@@ -15,6 +15,7 @@ export default function RankingPage() {
   const router = useRouter();
   const [rankings, setRankings] = useState<PerfilAluno[]>([]);
   const [search, setSearch] = useState('');
+  const [exportando, setExportando] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const confettiFired = useRef(false);
 
@@ -24,8 +25,7 @@ export default function RankingPage() {
         const { data, error } = await supabase
           .from('perfis')
           .select('*')
-          .order('xp_total', { ascending: false })
-          .limit(50);
+          .order('xp_total', { ascending: false });
           
         if (error) throw error;
         
@@ -94,7 +94,9 @@ export default function RankingPage() {
       <header className="flex items-center justify-between p-4 max-w-5xl mx-auto">
         <button className="btn btn-secondary btn-sm" onClick={() => router.push('/menu')}><ArrowLeft size={16} /> Menu</button>
         <div className="flex items-center gap-2">
-          <button className="btn btn-primary btn-sm" onClick={exportarRankingXLSX}><Download size={16} /> Exportar .xlsx</button>
+          <button className="btn btn-primary btn-sm" onClick={() => exportarRankingXLSX(setExportando)} disabled={exportando}>
+            {exportando ? <><Loader2 size={16} className="animate-spin" /> Preparando...</> : <><Download size={16} /> Exportar .xlsx</>}
+          </button>
           <button className="btn btn-secondary btn-sm" onClick={() => fileRef.current?.click()}><Upload size={16} /> Importar</button>
           <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
           <ThemeToggle />

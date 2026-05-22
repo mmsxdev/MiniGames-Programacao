@@ -2,12 +2,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Code, Puzzle, HelpCircle, Trophy, LogOut, Sparkles, CheckCircle2, Store, GraduationCap } from 'lucide-react';
+import { Code, Puzzle, HelpCircle, Trophy, LogOut, Sparkles, CheckCircle2, Store, GraduationCap, ClipboardList } from 'lucide-react';
 import { getPerfil, limparPerfil } from '@/lib/storage';
 import { PerfilAluno } from '@/types';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ScoreBar } from '@/components/game/ScoreBar';
 import { itensLoja } from '@/data/loja';
+import { carregarProgresso } from '@/lib/progress';
 
 const games = [
   { key: 'lacunas' as const, title: 'Código com Lacunas', desc: 'Preencha as lacunas no código Portugol e execute para verificar.', icon: <Code size={32} />, xpMax: 500, href: '/game/lacunas', color: '#7C3AED' },
@@ -18,10 +19,21 @@ const games = [
 export default function MenuPage() {
   const router = useRouter();
   const [perfil, setPerfil] = useState<PerfilAluno | null>(null);
+  const [progressos, setProgressos] = useState<Record<string, { questao: number; total: number }>>({});
 
   useEffect(() => {
     const p = getPerfil();
     if (!p) { router.push('/'); return; }
+    
+    const progLacunas = carregarProgresso('lacunas');
+    const progQuiz = carregarProgresso('quiz');
+    const progPuzzle = carregarProgresso('quebra-cabeca');
+    const progs: Record<string, { questao: number; total: number }> = {};
+    if (progLacunas) progs['lacunas'] = { questao: progLacunas.questaoAtual, total: progLacunas.totalQuestoes };
+    if (progQuiz) progs['quiz'] = { questao: progQuiz.questaoAtual, total: progQuiz.totalQuestoes };
+    if (progPuzzle) progs['puzzle'] = { questao: progPuzzle.questaoAtual, total: progPuzzle.totalQuestoes };
+    setProgressos(progs);
+
     setTimeout(() => {
       setPerfil(p);
     }, 0);
@@ -93,7 +105,13 @@ export default function MenuPage() {
                 <p className="text-sm mb-4 flex-1" style={{ color: 'var(--text-secondary)' }}>{g.desc}</p>
                 <div className="flex items-center justify-between">
                   <span className="badge badge-primary">⭐ Até {g.xpMax} XP</span>
-                  {done && resultado && <span className="badge badge-success">✅ {resultado.xpGanho} XP</span>}
+                  {done && resultado ? (
+                    <span className="badge badge-success">✅ {resultado.xpGanho} XP</span>
+                  ) : !done && progressos[g.key] ? (
+                    <span className="badge badge-warning flex items-center gap-1">
+                      <ClipboardList size={12} /> Em andamento ({progressos[g.key].questao + 1}/{progressos[g.key].total})
+                    </span>
+                  ) : null}
                 </div>
               </motion.div>
             );

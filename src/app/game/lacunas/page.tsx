@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Play, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Play, Lightbulb, SkipForward, ArrowLeftCircle, CheckCircle } from 'lucide-react';
 import { exerciciosLacunas } from '@/data/exercises-lacunas';
 import { carregarLacunasCustom } from '@/lib/custom-exercises';
 import { ExercicioLacuna } from '@/types';
@@ -14,6 +14,15 @@ import { ScoreBar } from '@/components/game/ScoreBar';
 import { Timer, useTimer } from '@/components/game/Timer';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { initAudio, playPop, playDing, playError } from '@/lib/audio';
+import { QuestionNav } from '@/components/game/QuestionNav';
+import { ResumeModal } from '@/components/game/ResumeModal';
+import { 
+  salvarProgresso, 
+  carregarProgresso, 
+  limparProgresso, 
+  buildStatuses, 
+  RespostaQuestao 
+} from '@/lib/progress';
 
 export default function LacunasPage() {
   const router = useRouter();
@@ -28,8 +37,14 @@ export default function LacunasPage() {
   const [acertos, setAcertos] = useState(0);
   const [hintsBought, setHintsBought] = useState<Set<string>>(new Set());
   const [allExercicios, setAllExercicios] = useState<ExercicioLacuna[]>(exerciciosLacunas);
-  const timer = useTimer();
+  
+  // Novos estados para progresso
+  const [showResume, setShowResume] = useState(false);
+  const [respostas, setRespostas] = useState<Record<number, RespostaQuestao>>({});
+  const [savedAnswers, setSavedAnswers] = useState<Record<number, Record<string, string>>>({});
+  const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false);
 
+  const timer = useTimer();
   const ex = allExercicios[idx];
 
   const handleBuyHint = (lacunaId: string) => {
@@ -47,13 +62,35 @@ export default function LacunasPage() {
     if (!getPerfil()) { router.push('/'); return; }
     timer.start();
     initAudio();
+    
     carregarLacunasCustom().then(custom => {
+      let loadedExercicios = exerciciosLacunas;
       if (custom.length > 0) {
-        setAllExercicios([...exerciciosLacunas, ...custom]);
+        loadedExercicios = [...exerciciosLacunas, ...custom];
+        setAllExercicios(loadedExercicios);
+      }
+      
+      const prog = carregarProgresso('lacunas');
+      if (prog && prog.totalQuestoes === loadedExercicios.length) {
+        setShowResume(true);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const saveCurrentState = (targetIdx: number, targetAnswers: Record<string, string>, currentRespostas: Record<number, RespostaQuestao>) => {
+    const prog = {
+      minigame: 'lacunas' as const,
+      questaoAtual: targetIdx,
+      totalQuestoes: allExercicios.length,
+      respostas: currentRespostas,
+      xpAcumulado: totalXP,
+      acertos,
+      iniciadoEm: new Date().toISOString(),
+      ultimaAtualizacaoEm: new Date().toISOString(),
+    };
+    salvarProgresso(prog);
+  };
 
   const handleChange = (lacunaId: string, value: string) => {
     setAnswers(prev => ({ ...prev, [lacunaId]: value }));
@@ -62,8 +99,9 @@ export default function LacunasPage() {
   };
 
   const handleRun = () => {
+    if (respostas[idx]?.correta) return; // Já respondeu corretamente
     setAttempts(prev => prev + 1);
-    // Check individual answers
+    
     const wrongIds = new Set<string>();
     for (const lac of ex.lacunas) {
       const userVal = (answers[lac.id] || '').trim();
@@ -72,7 +110,6 @@ export default function LacunasPage() {
     }
     setErrors(wrongIds);
 
-    // Build code
     let code = ex.codigoTemplate;
     for (const lac of ex.lacunas) {
       code = code.replace(`__${lac.id}__`, answers[lac.id] || '');
@@ -82,6 +119,10 @@ export default function LacunasPage() {
     if (!result.sucesso) {
       setOutput(null);
       setErrorMsg(result.erro?.mensagem || 'Erro na execução');
+      
+      const newRespostas = { ...respostas, [idx]: { respondida: true, pulada: false, correta: false, xpGanho: 0, tentativas: attempts + 1, valorResposta: answers } };
+      setRespostas(newRespostas);
+      saveCurrentState(idx, answers, newRespostas);
       return;
     }
 
@@ -96,73 +137,189 @@ export default function LacunasPage() {
       const xp = calcularXPExercicio(ex.xpMaximo, attempts + 1, semErros, false);
       const bonuses: string[] = [];
       if (semErros) { bonuses.push('⭐ Bônus por 1ª tentativa!'); adicionarBadge('🎯 Primeiro Acerto'); }
+      
       setTotalXP(prev => prev + xp);
       setAcertos(prev => prev + 1);
+      
+      const newRespostas = { ...respostas, [idx]: { respondida: true, pulada: false, correta: true, xpGanho: xp, tentativas: attempts + 1, valorResposta: answers } };
+      setRespostas(newRespostas);
+      saveCurrentState(idx, answers, newRespostas);
+      
       setFeedback({ show: true, correct: true, xp, bonuses, msg: ex.feedbackSucesso || `Saída: ${saidaStr}` });
     } else {
       playError();
       setFeedback({ show: false, correct: false, xp: 0, bonuses: [], msg: '' });
       if (wrongIds.size > 0) setErrorMsg(ex.feedbackErro || `Há ${wrongIds.size} lacuna(s) incorreta(s). Verifique os campos em vermelho.`);
       else setErrorMsg(`Saída incorreta. Esperado: "${esperado}", obtido: "${saidaStr}"`);
+      
+      const newRespostas = { ...respostas, [idx]: { respondida: true, pulada: false, correta: false, xpGanho: 0, tentativas: attempts + 1, valorResposta: answers } };
+      setRespostas(newRespostas);
+      saveCurrentState(idx, answers, newRespostas);
     }
+  };
+
+  const getNextUnanswered = (startIdx: number) => {
+    for (let i = startIdx; i < allExercicios.length; i++) {
+      if (!respostas[i] || (!respostas[i].correta && !respostas[i].pulada)) return i;
+    }
+    return -1;
+  };
+
+  const finalizeGame = () => {
+    timer.stop();
+    limparProgresso('lacunas');
+    salvarResultado('lacunas', {
+      completadoEm: new Date().toISOString(),
+      xpGanho: totalXP,
+      tentativas: Object.values(respostas).reduce((acc, curr) => acc + curr.tentativas, 0) || 1,
+      acertos,
+      totalQuestoes: allExercicios.length,
+      tempoSegundos: timer.seconds,
+    });
+    if (acertos === allExercicios.length) adicionarBadge('⭐ Perfeição');
+    router.push('/menu');
   };
 
   const handleNext = () => {
     setFeedback({ show: false, correct: false, xp: 0, bonuses: [], msg: '' });
-    setAnswers({});
-    setAttempts(0);
+    
+    // Salva as respostas atuais
+    setSavedAnswers(prev => ({ ...prev, [idx]: answers }));
+    
+    const nextIdx = getNextUnanswered(idx + 1) !== -1 ? getNextUnanswered(idx + 1) : getNextUnanswered(0);
+    
+    if (nextIdx !== -1) {
+      navigateTo(nextIdx);
+    } else {
+      // Tudo respondido ou pulado
+      const hasSkipped = Object.values(respostas).some(r => r.pulada);
+      if (hasSkipped) {
+         setShowFinalizeConfirm(true);
+      } else {
+         finalizeGame();
+      }
+    }
+  };
+
+  const handleSkip = () => {
+    setSavedAnswers(prev => ({ ...prev, [idx]: answers }));
+    const newRespostas = { ...respostas, [idx]: { respondida: false, pulada: true, correta: null, xpGanho: 0, tentativas: attempts, valorResposta: answers } };
+    setRespostas(newRespostas);
+    
+    let nextIdx = idx + 1;
+    if (nextIdx >= allExercicios.length) {
+      nextIdx = getNextUnanswered(0);
+      if (nextIdx === -1 || nextIdx === idx) {
+         saveCurrentState(idx, answers, newRespostas);
+         setShowFinalizeConfirm(true);
+         return;
+      }
+    }
+    
+    saveCurrentState(nextIdx, savedAnswers[nextIdx] || {}, newRespostas);
+    navigateTo(nextIdx);
+  };
+
+  const handlePrevious = () => {
+    if (idx > 0) {
+      setSavedAnswers(prev => ({ ...prev, [idx]: answers }));
+      saveCurrentState(idx - 1, savedAnswers[idx - 1] || {}, respostas);
+      navigateTo(idx - 1);
+    }
+  };
+
+  const navigateTo = (targetIdx: number) => {
+    setSavedAnswers(prev => ({ ...prev, [idx]: answers }));
+    setFeedback({ show: false, correct: false, xp: 0, bonuses: [], msg: '' });
+    setAttempts(respostas[targetIdx]?.tentativas || 0);
     setErrors(new Set());
     setHintsBought(new Set());
     setOutput(null);
     setErrorMsg('');
-    if (idx < allExercicios.length - 1) {
-      setIdx(idx + 1);
-    } else {
-      timer.stop();
-      salvarResultado('lacunas', {
-        completadoEm: new Date().toISOString(),
-        xpGanho: totalXP,
-        tentativas: attempts,
-        acertos,
-        totalQuestoes: allExercicios.length,
-        tempoSegundos: timer.seconds,
+    
+    // Restaura as respostas daquela questão se existirem
+    const targetSaved = savedAnswers[targetIdx] || (respostas[targetIdx]?.valorResposta as Record<string, string>) || {};
+    setAnswers(targetSaved);
+    setIdx(targetIdx);
+    
+    saveCurrentState(targetIdx, targetSaved, respostas);
+  };
+
+  const handleMenu = () => {
+    setSavedAnswers(prev => ({ ...prev, [idx]: answers }));
+    saveCurrentState(idx, answers, respostas);
+    router.push('/menu');
+  };
+
+  const handleContinue = () => {
+    const prog = carregarProgresso('lacunas');
+    if (prog) {
+      setIdx(prog.questaoAtual);
+      setTotalXP(prog.xpAcumulado);
+      setAcertos(prog.acertos);
+      setRespostas(prog.respostas);
+      
+      const loadedSaved: Record<number, Record<string, string>> = {};
+      Object.entries(prog.respostas).forEach(([k, v]) => {
+        if (v.valorResposta) loadedSaved[Number(k)] = v.valorResposta as Record<string, string>;
       });
-      if (acertos === allExercicios.length) adicionarBadge('⭐ Perfeição');
-      router.push('/menu');
+      setSavedAnswers(loadedSaved);
+      setAnswers(loadedSaved[prog.questaoAtual] || {});
+      setAttempts(prog.respostas[prog.questaoAtual]?.tentativas || 0);
     }
+    setShowResume(false);
+  };
+
+  const handleRestart = () => {
+    limparProgresso('lacunas');
+    setShowResume(false);
   };
 
   const renderCode = useCallback(() => {
+    if (!ex) return null;
     const parts = ex.codigoTemplate.split(/__([A-Z_0-9]+)__/);
+    const isCorrect = respostas[idx]?.correta;
+
     return parts.map((part, i) => {
       if (i % 2 === 1) {
         const lacuna = ex.lacunas.find(l => l.id === part);
         if (!lacuna) return <span key={i}>{part}</span>;
         const hasError = errors.has(part);
         return (
-          <input key={i} className={`input-code ${hasError ? 'error' : answers[part] ? 'filled' : ''}`}
+          <input key={i} className={`input-code ${hasError ? 'error' : answers[part] ? 'filled' : ''} ${isCorrect ? 'success' : ''}`}
             style={{ width: `calc(${Math.max(lacuna.tamanhoVisual, 4)}ch + 16px)` }}
             placeholder={`...`} value={answers[part] || ''}
             onChange={e => handleChange(part, e.target.value)}
+            disabled={isCorrect === true}
             title={lacuna.dica} />
         );
       }
       return <span key={i}>{part}</span>;
     });
-  }, [ex, answers, errors]);
+  }, [ex, answers, errors, idx, respostas]);
+
+  if (!ex) return null;
+
+  const statuses = buildStatuses(allExercicios.length, idx, respostas);
+  const isCorrect = respostas[idx]?.correta;
+  const allAnsweredOrSkipped = Object.keys(respostas).length === allExercicios.length;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      <header className="flex items-center justify-between p-4 max-w-5xl mx-auto">
-        <button className="btn btn-secondary btn-sm" onClick={() => router.push('/menu')}><ArrowLeft size={16} /> Menu</button>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-primary)' }}>
+      <header className="flex items-center justify-between p-4 max-w-5xl mx-auto w-full">
+        <button className="btn btn-secondary btn-sm" onClick={handleMenu}><ArrowLeft size={16} /> Menu</button>
         <div className="flex items-center gap-3">
-          <Timer running={timer.running} />
-          <span className="badge badge-primary">Exercício {idx + 1}/{exerciciosLacunas.length}</span>
+          <Timer running={timer.running && !showResume} />
+          <span className="badge badge-primary">Exercício {idx + 1}/{allExercicios.length}</span>
           <ThemeToggle />
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 pb-8">
+      <div className="max-w-5xl mx-auto w-full">
+        <QuestionNav total={allExercicios.length} current={idx} statuses={statuses} onNavigate={navigateTo} />
+      </div>
+
+      <main className="max-w-4xl mx-auto px-4 pb-8 flex-1 w-full">
         <ScoreBar xp={totalXP} maxXP={500} label="XP Acumulado" />
 
         <AnimatePresence mode="wait">
@@ -194,21 +351,41 @@ export default function LacunasPage() {
                 return (
                   <div key={l.id} className="flex items-center gap-1 text-xs" style={{ color: errors.has(l.id) ? 'var(--error)' : 'var(--text-muted)' }}>
                     <Lightbulb size={12} /> {l.id}: {l.dica}
-                    {!isBought ? (
+                    {!isBought && !isCorrect ? (
                       <button className="btn btn-secondary text-[10px] px-2 py-0 ml-1 rounded h-5" onClick={() => handleBuyHint(l.id)}>
                         Revelar Primeira Letra (-20 XP)
                       </button>
-                    ) : (
-                      <span className="badge badge-warning text-[10px] ml-1 py-0 h-5 flex items-center">Começa com &quot;{correta.charAt(0)}&quot;</span>
-                    )}
+                    ) : isBought || isCorrect ? (
+                      <span className="badge badge-warning text-[10px] ml-1 py-0 h-5 flex items-center">Começa com "{correta.charAt(0)}"</span>
+                    ) : null}
                   </div>
                 );
               })}
             </div>
 
-            <div className="flex gap-3">
-              <button className="btn btn-primary" onClick={handleRun}><Play size={18} /> Executar</button>
-              {attempts > 0 && <span className="badge badge-warning self-center">Tentativa {attempts}</span>}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+              <div className="flex gap-2">
+                <button className="btn btn-secondary" onClick={handlePrevious} disabled={idx === 0}>
+                  <ArrowLeftCircle size={18} /> Anterior
+                </button>
+                
+                {(!isCorrect || (isCorrect && !allAnsweredOrSkipped)) && (
+                   <button className="btn btn-secondary" onClick={handleSkip}>
+                     Pular <SkipForward size={18} />
+                   </button>
+                )}
+              </div>
+              
+              <div className="flex gap-3">
+                {!isCorrect ? (
+                  <button className="btn btn-primary" onClick={handleRun}><Play size={18} /> Executar</button>
+                ) : (
+                  <div className="flex items-center gap-2 text-success font-bold">
+                    <CheckCircle size={20} /> Correto!
+                  </div>
+                )}
+                {attempts > 0 && <span className="badge badge-warning self-center">Tentativa {attempts}</span>}
+              </div>
             </div>
 
             {(output || errorMsg) && (
@@ -220,12 +397,34 @@ export default function LacunasPage() {
                 {errorMsg && <p className="text-sm" style={{ color: 'var(--error)' }}>{errorMsg}</p>}
               </motion.div>
             )}
+            
+            {showFinalizeConfirm && (
+               <motion.div className="mt-6 card border-warning" initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+                 <h3 className="font-bold text-lg mb-2 flex items-center gap-2"><CheckCircle style={{color: 'var(--warning)'}}/> Finalizar Minigame?</h3>
+                 <p className="mb-4" style={{color: 'var(--text-secondary)'}}>Você pulou algumas questões. Tem certeza que deseja finalizar agora? Questões puladas não darão XP.</p>
+                 <div className="flex gap-3">
+                   <button className="btn btn-secondary flex-1" onClick={() => setShowFinalizeConfirm(false)}>Voltar e Revisar</button>
+                   <button className="btn btn-primary flex-1 bg-warning hover:bg-warning/80 text-black border-none" onClick={finalizeGame}>Finalizar Mesmo Assim</button>
+                 </div>
+               </motion.div>
+            )}
+
           </motion.div>
         </AnimatePresence>
       </main>
 
       <FeedbackModal show={feedback.show} correct={feedback.correct} xpGained={feedback.xp} bonuses={feedback.bonuses} message={feedback.msg}
-        onNext={handleNext} nextLabel={idx < exerciciosLacunas.length - 1 ? 'Próximo Exercício' : '🏆 Finalizar'} />
+        onNext={handleNext} nextLabel={idx < allExercicios.length - 1 || Object.values(respostas).some(r => r.pulada && !r.correta) ? 'Próximo Exercício' : '🏆 Finalizar'} />
+
+      <ResumeModal 
+        show={showResume} 
+        minigame="lacunas" 
+        questaoAtual={idx} 
+        totalQuestoes={allExercicios.length} 
+        xpAcumulado={totalXP} 
+        onContinue={handleContinue} 
+        onRestart={handleRestart} 
+      />
     </div>
   );
 }
