@@ -35,26 +35,47 @@ export default function LacunasPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [totalXP, setTotalXP] = useState(0);
   const [acertos, setAcertos] = useState(0);
+  
   const [hintsBought, setHintsBought] = useState<Set<string>>(new Set());
+  const [savedHints, setSavedHints] = useState<Record<number, string[]>>({});
+  
   const [allExercicios, setAllExercicios] = useState<ExercicioLacuna[]>(exerciciosLacunas);
   
-  // Novos estados para progresso
   const [showResume, setShowResume] = useState(false);
   const [respostas, setRespostas] = useState<Record<number, RespostaQuestao>>({});
   const [savedAnswers, setSavedAnswers] = useState<Record<number, Record<string, string>>>({});
   const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false);
+  const [resumeData, setResumeData] = useState<any>(null);
 
   const timer = useTimer();
   const ex = allExercicios[idx];
 
   const handleBuyHint = (lacunaId: string) => {
     if (hintsBought.has(lacunaId)) return;
-    if (comprarDicaLocal(20)) {
-      setHintsBought(prev => new Set(prev).add(lacunaId));
+    
+    const custo = 20;
+    const newHints = new Set(hintsBought).add(lacunaId);
+    
+    if (totalXP >= custo) {
+      setTotalXP(prev => prev - custo);
+      setHintsBought(newHints);
+      const newSavedHints = { ...savedHints, [idx]: Array.from(newHints) };
+      setSavedHints(newSavedHints);
+      saveCurrentState(idx, respostas, newSavedHints, totalXP - custo);
       playPop();
     } else {
-      setErrorMsg('XP insuficiente para comprar dica (necessário 20 XP).');
-      playError();
+      const restante = custo - totalXP;
+      if (comprarDicaLocal(restante)) {
+        setTotalXP(0);
+        setHintsBought(newHints);
+        const newSavedHints = { ...savedHints, [idx]: Array.from(newHints) };
+        setSavedHints(newSavedHints);
+        saveCurrentState(idx, respostas, newSavedHints, 0);
+        playPop();
+      } else {
+        setErrorMsg('XP insuficiente para comprar dica (necessário 20 XP na sessão ou no perfil).');
+        playError();
+      }
     }
   };
 
@@ -71,23 +92,25 @@ export default function LacunasPage() {
       }
       
       const prog = carregarProgresso('lacunas');
-      if (prog && prog.totalQuestoes === loadedExercicios.length) {
+      if (prog && prog.totalQuestoes === loadedExercicios.length && Object.keys(prog.respostas).length > 0) {
+        setResumeData(prog);
         setShowResume(true);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const saveCurrentState = (targetIdx: number, targetAnswers: Record<string, string>, currentRespostas: Record<number, RespostaQuestao>) => {
+  const saveCurrentState = (targetIdx: number, currentRespostas: Record<number, RespostaQuestao>, currentSavedHints: Record<number, string[]>, overrideXP?: number) => {
     const prog = {
       minigame: 'lacunas' as const,
       questaoAtual: targetIdx,
       totalQuestoes: allExercicios.length,
       respostas: currentRespostas,
-      xpAcumulado: totalXP,
+      xpAcumulado: overrideXP !== undefined ? overrideXP : totalXP,
       acertos,
       iniciadoEm: new Date().toISOString(),
       ultimaAtualizacaoEm: new Date().toISOString(),
+      hintsComprados: currentSavedHints,
     };
     salvarProgresso(prog);
   };
@@ -99,7 +122,7 @@ export default function LacunasPage() {
   };
 
   const handleRun = () => {
-    if (respostas[idx]?.correta) return; // Já respondeu corretamente
+    if (respostas[idx]?.correta) return; 
     setAttempts(prev => prev + 1);
     
     const wrongIds = new Set<string>();
@@ -122,7 +145,10 @@ export default function LacunasPage() {
       
       const newRespostas = { ...respostas, [idx]: { respondida: true, pulada: false, correta: false, xpGanho: 0, tentativas: attempts + 1, valorResposta: answers } };
       setRespostas(newRespostas);
-      saveCurrentState(idx, answers, newRespostas);
+      
+      const newSavedHints = { ...savedHints, [idx]: Array.from(hintsBought) };
+      setSavedHints(newSavedHints);
+      saveCurrentState(idx, newRespostas, newSavedHints);
       return;
     }
 
@@ -143,7 +169,10 @@ export default function LacunasPage() {
       
       const newRespostas = { ...respostas, [idx]: { respondida: true, pulada: false, correta: true, xpGanho: xp, tentativas: attempts + 1, valorResposta: answers } };
       setRespostas(newRespostas);
-      saveCurrentState(idx, answers, newRespostas);
+      
+      const newSavedHints = { ...savedHints, [idx]: Array.from(hintsBought) };
+      setSavedHints(newSavedHints);
+      saveCurrentState(idx, newRespostas, newSavedHints, totalXP + xp);
       
       setFeedback({ show: true, correct: true, xp, bonuses, msg: ex.feedbackSucesso || `Saída: ${saidaStr}` });
     } else {
@@ -154,7 +183,10 @@ export default function LacunasPage() {
       
       const newRespostas = { ...respostas, [idx]: { respondida: true, pulada: false, correta: false, xpGanho: 0, tentativas: attempts + 1, valorResposta: answers } };
       setRespostas(newRespostas);
-      saveCurrentState(idx, answers, newRespostas);
+      
+      const newSavedHints = { ...savedHints, [idx]: Array.from(hintsBought) };
+      setSavedHints(newSavedHints);
+      saveCurrentState(idx, newRespostas, newSavedHints);
     }
   };
 
@@ -183,15 +215,11 @@ export default function LacunasPage() {
   const handleNext = () => {
     setFeedback({ show: false, correct: false, xp: 0, bonuses: [], msg: '' });
     
-    // Salva as respostas atuais
-    setSavedAnswers(prev => ({ ...prev, [idx]: answers }));
-    
     const nextIdx = getNextUnanswered(idx + 1) !== -1 ? getNextUnanswered(idx + 1) : getNextUnanswered(0);
     
     if (nextIdx !== -1) {
       navigateTo(nextIdx);
     } else {
-      // Tudo respondido ou pulado
       const hasSkipped = Object.values(respostas).some(r => r.pulada);
       if (hasSkipped) {
          setShowFinalizeConfirm(true);
@@ -202,7 +230,6 @@ export default function LacunasPage() {
   };
 
   const handleSkip = () => {
-    setSavedAnswers(prev => ({ ...prev, [idx]: answers }));
     const newRespostas = { ...respostas, [idx]: { respondida: false, pulada: true, correta: null, xpGanho: 0, tentativas: attempts, valorResposta: answers } };
     setRespostas(newRespostas);
     
@@ -210,44 +237,52 @@ export default function LacunasPage() {
     if (nextIdx >= allExercicios.length) {
       nextIdx = getNextUnanswered(0);
       if (nextIdx === -1 || nextIdx === idx) {
-         saveCurrentState(idx, answers, newRespostas);
+         const newSavedHints = { ...savedHints, [idx]: Array.from(hintsBought) };
+         saveCurrentState(idx, newRespostas, newSavedHints);
          setShowFinalizeConfirm(true);
          return;
       }
     }
     
-    saveCurrentState(nextIdx, savedAnswers[nextIdx] || {}, newRespostas);
-    navigateTo(nextIdx);
+    navigateTo(nextIdx, newRespostas);
   };
 
   const handlePrevious = () => {
     if (idx > 0) {
-      setSavedAnswers(prev => ({ ...prev, [idx]: answers }));
-      saveCurrentState(idx - 1, savedAnswers[idx - 1] || {}, respostas);
       navigateTo(idx - 1);
     }
   };
 
-  const navigateTo = (targetIdx: number) => {
-    setSavedAnswers(prev => ({ ...prev, [idx]: answers }));
+  const navigateTo = (targetIdx: number, overrideRespostas?: Record<number, RespostaQuestao>) => {
+    const finalRespostas = overrideRespostas || respostas;
+    
+    const newSavedAnswers = { ...savedAnswers, [idx]: answers };
+    setSavedAnswers(newSavedAnswers);
+    
+    const newSavedHints = { ...savedHints, [idx]: Array.from(hintsBought) };
+    setSavedHints(newSavedHints);
+
     setFeedback({ show: false, correct: false, xp: 0, bonuses: [], msg: '' });
-    setAttempts(respostas[targetIdx]?.tentativas || 0);
+    setAttempts(finalRespostas[targetIdx]?.tentativas || 0);
     setErrors(new Set());
-    setHintsBought(new Set());
     setOutput(null);
     setErrorMsg('');
     
-    // Restaura as respostas daquela questão se existirem
-    const targetSaved = savedAnswers[targetIdx] || (respostas[targetIdx]?.valorResposta as Record<string, string>) || {};
+    // Restaura
+    const targetSaved = newSavedAnswers[targetIdx] || (finalRespostas[targetIdx]?.valorResposta as Record<string, string>) || {};
     setAnswers(targetSaved);
+    
+    const targetHints = newSavedHints[targetIdx] || [];
+    setHintsBought(new Set(targetHints));
+    
     setIdx(targetIdx);
     
-    saveCurrentState(targetIdx, targetSaved, respostas);
+    saveCurrentState(targetIdx, finalRespostas, newSavedHints);
   };
 
   const handleMenu = () => {
-    setSavedAnswers(prev => ({ ...prev, [idx]: answers }));
-    saveCurrentState(idx, answers, respostas);
+    const newSavedHints = { ...savedHints, [idx]: Array.from(hintsBought) };
+    saveCurrentState(idx, respostas, newSavedHints);
     router.push('/menu');
   };
 
@@ -266,6 +301,11 @@ export default function LacunasPage() {
       setSavedAnswers(loadedSaved);
       setAnswers(loadedSaved[prog.questaoAtual] || {});
       setAttempts(prog.respostas[prog.questaoAtual]?.tentativas || 0);
+      
+      if (prog.hintsComprados) {
+        setSavedHints(prog.hintsComprados);
+        setHintsBought(new Set(prog.hintsComprados[prog.questaoAtual] || []));
+      }
     }
     setShowResume(false);
   };
@@ -419,9 +459,9 @@ export default function LacunasPage() {
       <ResumeModal 
         show={showResume} 
         minigame="lacunas" 
-        questaoAtual={idx} 
+        questaoAtual={resumeData ? resumeData.questaoAtual : idx} 
         totalQuestoes={allExercicios.length} 
-        xpAcumulado={totalXP} 
+        xpAcumulado={resumeData ? resumeData.xpAcumulado : totalXP} 
         onContinue={handleContinue} 
         onRestart={handleRestart} 
       />

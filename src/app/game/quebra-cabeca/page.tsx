@@ -36,26 +36,43 @@ export default function QuebracabecaPage() {
   const [totalXP, setTotalXP] = useState(0);
   const [acertos, setAcertos] = useState(0);
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
+  
   const [hintsBought, setHintsBought] = useState<Set<string>>(new Set());
+  const [savedHints, setSavedHints] = useState<Record<number, string[]>>({});
+
   const [allExercicios, setAllExercicios] = useState<ExercicioPuzzle[]>(exerciciosPuzzle);
   
-  // Novos estados para progresso
   const [showResume, setShowResume] = useState(false);
   const [respostas, setRespostas] = useState<Record<number, RespostaQuestao>>({});
   const [savedSlots, setSavedSlots] = useState<Record<number, Record<string, string>>>({});
   const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false);
+  const [resumeData, setResumeData] = useState<any>(null);
 
   const timer = useTimer();
   const ex = allExercicios[idx];
 
   const handleBuyHint = (slotId: string) => {
     if (hintsBought.has(slotId)) return;
-    if (comprarDicaLocal(20)) {
-      setHintsBought(prev => new Set(prev).add(slotId));
+    
+    const custo = 20;
+    const newHints = new Set(hintsBought).add(slotId);
+    
+    if (totalXP >= custo) {
+      setTotalXP(prev => prev - custo);
+      setHintsBought(newHints);
+      saveCurrentState(idx, slotAssignments, respostas, newHints, totalXP - custo);
       playPop();
     } else {
-      setErrorMsg('XP insuficiente para comprar dica (necessário 20 XP).');
-      playError();
+      const restante = custo - totalXP;
+      if (comprarDicaLocal(restante)) {
+        setTotalXP(0);
+        setHintsBought(newHints);
+        saveCurrentState(idx, slotAssignments, respostas, newHints, 0);
+        playPop();
+      } else {
+        setErrorMsg('XP insuficiente para comprar dica (necessário 20 XP na sessão ou no perfil).');
+        playError();
+      }
     }
   };
 
@@ -72,23 +89,27 @@ export default function QuebracabecaPage() {
       }
       
       const prog = carregarProgresso('quebra-cabeca');
-      if (prog && prog.totalQuestoes === loadedExercicios.length) {
+      if (prog && prog.totalQuestoes === loadedExercicios.length && Object.keys(prog.respostas).length > 0) {
+        setResumeData(prog);
         setShowResume(true);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const saveCurrentState = (targetIdx: number, targetSlots: Record<string, string>, currentRespostas: Record<number, RespostaQuestao>) => {
+  const saveCurrentState = (targetIdx: number, targetSlots: Record<string, string>, currentRespostas: Record<number, RespostaQuestao>, currentHints: Set<string> = hintsBought, overrideXP?: number) => {
+    const updatedSavedHints = { ...savedHints, [idx]: Array.from(currentHints) };
+    
     const prog = {
       minigame: 'quebra-cabeca' as const,
       questaoAtual: targetIdx,
       totalQuestoes: allExercicios.length,
       respostas: currentRespostas,
-      xpAcumulado: totalXP,
+      xpAcumulado: overrideXP !== undefined ? overrideXP : totalXP,
       acertos,
       iniciadoEm: new Date().toISOString(),
       ultimaAtualizacaoEm: new Date().toISOString(),
+      hintsComprados: updatedSavedHints,
     };
     salvarProgresso(prog);
   };
@@ -211,6 +232,7 @@ export default function QuebracabecaPage() {
     setFeedback({ show: false, correct: false, xp: 0, bonuses: [], msg: '' });
     
     setSavedSlots(prev => ({ ...prev, [idx]: slotAssignments }));
+    setSavedHints(prev => ({ ...prev, [idx]: Array.from(hintsBought) }));
     
     const nextIdx = getNextUnanswered(idx + 1) !== -1 ? getNextUnanswered(idx + 1) : getNextUnanswered(0);
     
@@ -228,6 +250,7 @@ export default function QuebracabecaPage() {
 
   const handleSkip = () => {
     setSavedSlots(prev => ({ ...prev, [idx]: slotAssignments }));
+    setSavedHints(prev => ({ ...prev, [idx]: Array.from(hintsBought) }));
     const newRespostas = { ...respostas, [idx]: { respondida: false, pulada: true, correta: null, xpGanho: 0, tentativas: attempts, valorResposta: slotAssignments } };
     setRespostas(newRespostas);
     
@@ -248,6 +271,7 @@ export default function QuebracabecaPage() {
   const handlePrevious = () => {
     if (idx > 0) {
       setSavedSlots(prev => ({ ...prev, [idx]: slotAssignments }));
+      setSavedHints(prev => ({ ...prev, [idx]: Array.from(hintsBought) }));
       saveCurrentState(idx - 1, savedSlots[idx - 1] || {}, respostas);
       navigateTo(idx - 1);
     }
@@ -255,24 +279,29 @@ export default function QuebracabecaPage() {
 
   const navigateTo = (targetIdx: number) => {
     setSavedSlots(prev => ({ ...prev, [idx]: slotAssignments }));
+    setSavedHints(prev => ({ ...prev, [idx]: Array.from(hintsBought) }));
     setFeedback({ show: false, correct: false, xp: 0, bonuses: [], msg: '' });
     setAttempts(respostas[targetIdx]?.tentativas || 0);
     setSlotErrors(new Set());
-    setHintsBought(new Set());
     setOutput(null);
     setErrorMsg('');
     setSelectedBlock(null);
     
     const targetSaved = savedSlots[targetIdx] || (respostas[targetIdx]?.valorResposta as Record<string, string>) || {};
     setSlotAssignments(targetSaved);
+    
+    const targetHints = savedHints[targetIdx] || [];
+    setHintsBought(new Set(targetHints));
+    
     setIdx(targetIdx);
     
-    saveCurrentState(targetIdx, targetSaved, respostas);
+    saveCurrentState(targetIdx, targetSaved, respostas, new Set(targetHints));
   };
 
   const handleMenu = () => {
     setSavedSlots(prev => ({ ...prev, [idx]: slotAssignments }));
-    saveCurrentState(idx, slotAssignments, respostas);
+    setSavedHints(prev => ({ ...prev, [idx]: Array.from(hintsBought) }));
+    saveCurrentState(idx, slotAssignments, respostas, hintsBought);
     router.push('/menu');
   };
 
@@ -291,6 +320,11 @@ export default function QuebracabecaPage() {
       setSavedSlots(loadedSaved);
       setSlotAssignments(loadedSaved[prog.questaoAtual] || {});
       setAttempts(prog.respostas[prog.questaoAtual]?.tentativas || 0);
+      
+      if (prog.hintsComprados) {
+        setSavedHints(prog.hintsComprados);
+        setHintsBought(new Set(prog.hintsComprados[prog.questaoAtual] || []));
+      }
     }
     setShowResume(false);
   };
@@ -451,9 +485,9 @@ export default function QuebracabecaPage() {
       <ResumeModal 
         show={showResume} 
         minigame="quebra-cabeca" 
-        questaoAtual={idx} 
+        questaoAtual={resumeData ? resumeData.questaoAtual : idx} 
         totalQuestoes={allExercicios.length} 
-        xpAcumulado={totalXP} 
+        xpAcumulado={resumeData ? resumeData.xpAcumulado : totalXP} 
         onContinue={handleContinue} 
         onRestart={handleRestart} 
       />

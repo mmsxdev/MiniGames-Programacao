@@ -20,7 +20,6 @@ import {
   RespostaQuestao 
 } from '@/lib/progress';
 
-// Função utilitária externa pura para manter o render React determinístico
 const obterTempoAtual = () => Date.now();
 
 export default function QuizPage() {
@@ -39,12 +38,12 @@ export default function QuizPage() {
   const startTimeRef = useRef(0);
   const [allQuestions, setAllQuestions] = useState<Pergunta[]>(quizQuestions);
   
-  // Novos estados para progresso
   const [showResume, setShowResume] = useState(false);
   const [respostas, setRespostas] = useState<Record<number, RespostaQuestao>>({});
   const [selectedPerQ, setSelectedPerQ] = useState<Record<number, string | null>>({});
   const [answeredPerQ, setAnsweredPerQ] = useState<Record<number, boolean>>({});
   const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false);
+  const [resumeData, setResumeData] = useState<any>(null);
 
   const q = allQuestions[idx];
 
@@ -59,7 +58,8 @@ export default function QuizPage() {
       }
       
       const prog = carregarProgresso('quiz');
-      if (prog && prog.totalQuestoes === loadedQuestions.length) {
+      if (prog && prog.totalQuestoes === loadedQuestions.length && Object.keys(prog.respostas).length > 0) {
+        setResumeData(prog);
         setShowResume(true);
       }
     });
@@ -68,7 +68,6 @@ export default function QuizPage() {
   useEffect(() => {
     if (done || showResume) return;
     
-    // Só roda o timer se a questão não foi respondida nem pulada
     if (!answeredPerQ[idx] && !(respostas[idx]?.pulada)) {
       startTimeRef.current = obterTempoAtual();
       timerRef.current = setInterval(() => setQTimer(t => t + 1), 1000);
@@ -79,7 +78,7 @@ export default function QuizPage() {
     return () => clearInterval(timerRef.current);
   }, [idx, done, showResume, answeredPerQ, respostas]);
 
-  const saveCurrentState = (targetIdx: number, currentRespostas: Record<number, RespostaQuestao>, currentSelected: Record<number, string | null>) => {
+  const saveCurrentState = (targetIdx: number, currentRespostas: Record<number, RespostaQuestao>, currentSelected: Record<number, string | null>, currentStreak: number = streak, currentMaxStreak: number = maxStreak) => {
     const prog = {
       minigame: 'quiz' as const,
       questaoAtual: targetIdx,
@@ -89,8 +88,9 @@ export default function QuizPage() {
       acertos,
       iniciadoEm: new Date().toISOString(),
       ultimaAtualizacaoEm: new Date().toISOString(),
+      streak: currentStreak,
+      maxStreak: currentMaxStreak
     };
-    // Save selected values inside respostas to be loaded easily
     Object.keys(currentSelected).forEach(k => {
       if (prog.respostas[Number(k)]) {
         prog.respostas[Number(k)].valorResposta = currentSelected[Number(k)];
@@ -112,17 +112,20 @@ export default function QuizPage() {
 
     let xpGanho = 0;
     let newStreak = streak;
+    let newMaxStreak = maxStreak;
     
     if (isCorrect) {
       setAcertos(prev => prev + 1);
       newStreak = streak + 1;
+      newMaxStreak = Math.max(maxStreak, newStreak);
       setStreak(newStreak);
-      setMaxStreak(prev => Math.max(prev, newStreak));
+      setMaxStreak(newMaxStreak);
       xpGanho = q.xpBase;
       if (wasRapido) xpGanho += BONUS.rapido;
       xpGanho += newStreak * BONUS.streakCorreta;
       setTotalXP(prev => prev + xpGanho);
     } else {
+      newStreak = 0;
       setStreak(0);
     }
     
@@ -138,7 +141,7 @@ export default function QuizPage() {
     const newRespostas = { ...respostas, [idx]: { respondida: true, pulada: false, correta: isCorrect, xpGanho, tentativas: 1, valorResposta: optId } };
     setRespostas(newRespostas);
     
-    saveCurrentState(idx, newRespostas, newSelectedPerQ);
+    saveCurrentState(idx, newRespostas, newSelectedPerQ, newStreak, newMaxStreak);
   };
 
   const getNextUnanswered = (startIdx: number) => {
@@ -153,7 +156,6 @@ export default function QuizPage() {
     clearInterval(timerRef.current);
     const totalTime = Math.round((obterTempoAtual() - startTimeRef.current) / 1000);
     
-    // Contabiliza acertos das respostas salvas para garantir precisão
     const finalAcertos = Object.values(respostas).filter(r => r.correta).length;
     
     salvarResultado('quiz', { completadoEm: new Date().toISOString(), xpGanho: totalXP, tentativas: 1, acertos: finalAcertos, totalQuestoes: allQuestions.length, tempoSegundos: totalTime });
@@ -209,16 +211,12 @@ export default function QuizPage() {
   const navigateTo = (targetIdx: number) => {
     clearInterval(timerRef.current);
     
-    // Se a questão alvo já foi respondida, carrega o estado
     const isTargetAnswered = answeredPerQ[targetIdx] || (respostas[targetIdx]?.respondida === true);
-    
-    // Se for pulada, permite responder normalmente
     const isTargetSkipped = respostas[targetIdx]?.pulada === true;
     
     setSelected(selectedPerQ[targetIdx] || null);
     setAnswered(isTargetAnswered);
     
-    // Se estava pulada, ao navegar de volta desmarcamos como pulada para que o timer rode
     if (isTargetSkipped) {
       const newRespostas = { ...respostas };
       delete newRespostas[targetIdx];
@@ -243,6 +241,9 @@ export default function QuizPage() {
       setTotalXP(prog.xpAcumulado);
       setAcertos(prog.acertos);
       setRespostas(prog.respostas);
+      
+      if (prog.streak !== undefined) setStreak(prog.streak);
+      if (prog.maxStreak !== undefined) setMaxStreak(prog.maxStreak);
       
       const loadedSelected: Record<number, string | null> = {};
       const loadedAnswered: Record<number, boolean> = {};
@@ -412,9 +413,9 @@ export default function QuizPage() {
       <ResumeModal 
         show={showResume} 
         minigame="quiz" 
-        questaoAtual={idx} 
+        questaoAtual={resumeData ? resumeData.questaoAtual : idx} 
         totalQuestoes={allQuestions.length} 
-        xpAcumulado={totalXP} 
+        xpAcumulado={resumeData ? resumeData.xpAcumulado : totalXP} 
         onContinue={handleContinue} 
         onRestart={handleRestart} 
       />

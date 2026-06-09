@@ -22,6 +22,9 @@ export interface ProgressoMinigame {
   acertos: number;
   iniciadoEm: string;
   ultimaAtualizacaoEm: string;
+  hintsComprados?: Record<number, string[]>;
+  streak?: number;
+  maxStreak?: number;
 }
 
 const PROGRESS_KEYS: Record<string, string> = {
