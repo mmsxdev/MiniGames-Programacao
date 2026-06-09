@@ -30,21 +30,32 @@ export default function RankingPage() {
         if (error) throw error;
         
         if (data && data.length > 0) {
-          const remoteRankings = data.map(r => ({
-            id: r.id,
-            nome: r.nome,
-            turma: r.turma,
-            xpTotal: r.xp_total,
-            xpGasto: r.xp_gasto,
-            inventario: r.inventario || [],
-            avatarEquipado: r.avatar_equipado || '',
-            corEquipada: r.cor_equipada || '',
-            tituloEquipado: r.titulo_equipado || '',
-            iniciadoEm: r.updated_at,
-            minigamesCompletados: { lacunas: null, puzzle: null, quiz: null },
-            badges: []
-          })) as PerfilAluno[];
-          setRankings(remoteRankings);
+          const localRankings = getRankingsOrdenados();
+          
+          const remoteRankings = data.map(r => {
+            const localMatch = localRankings.find(l => l.nome === r.nome && l.turma === r.turma);
+            
+            return {
+              id: r.id,
+              nome: r.nome,
+              turma: r.turma,
+              xpTotal: Math.max(r.xp_total || 0, localMatch?.xpTotal || 0),
+              xpGasto: r.xp_gasto || localMatch?.xpGasto || 0,
+              inventario: r.inventario || localMatch?.inventario || [],
+              avatarEquipado: r.avatar_equipado || localMatch?.avatarEquipado || '',
+              corEquipada: r.cor_equipada || localMatch?.corEquipada || '',
+              tituloEquipado: r.titulo_equipado || localMatch?.tituloEquipado || '',
+              iniciadoEm: r.updated_at,
+              minigamesCompletados: localMatch?.minigamesCompletados || { lacunas: null, puzzle: null, quiz: null },
+              badges: localMatch?.badges || []
+            };
+          }) as PerfilAluno[];
+          
+          // Adiciona os locais que não estão no Supabase
+          const onlyLocal = localRankings.filter(l => !remoteRankings.some(r => r.nome === l.nome && r.turma === l.turma));
+          
+          const merged = [...remoteRankings, ...onlyLocal].sort((a, b) => b.xpTotal - a.xpTotal);
+          setRankings(merged);
         } else {
           setRankings(getRankingsOrdenados());
         }
