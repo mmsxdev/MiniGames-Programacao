@@ -57,9 +57,9 @@ export async function exportarRankingXLSX(onLoadingChange?: (loading: boolean) =
       'Nome': r.nome,
       'Turma': r.turma,
       'XP Total': r.xpTotal,
-      'Lacunas XP': r.minigamesCompletados.lacunas ? r.minigamesCompletados.lacunas.xpGanho : '-',
-      'Quebra-Cabeça XP': r.minigamesCompletados.puzzle ? r.minigamesCompletados.puzzle.xpGanho : '-',
-      'Quiz XP': r.minigamesCompletados.quiz ? r.minigamesCompletados.quiz.xpGanho : '-',
+      'Lacunas XP': r.minigamesCompletados.lacunas ? r.minigamesCompletados.lacunas.xpGanho : 0,
+      'Quebra-Cabeça XP': r.minigamesCompletados.puzzle ? r.minigamesCompletados.puzzle.xpGanho : 0,
+      'Quiz XP': r.minigamesCompletados.quiz ? r.minigamesCompletados.quiz.xpGanho : 0,
       'Tempo Total (min)': Math.round(((r.minigamesCompletados.lacunas?.tempoSegundos || 0) + 
                                        (r.minigamesCompletados.puzzle?.tempoSegundos || 0) + 
                                        (r.minigamesCompletados.quiz?.tempoSegundos || 0)) / 60),

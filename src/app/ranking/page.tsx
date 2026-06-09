@@ -188,9 +188,9 @@ export default function RankingPage() {
                           </span>
                         </td>
                         <td>{r.turma}</td>
-                        <td>{r.minigamesCompletados.lacunas ? `${r.minigamesCompletados.lacunas.xpGanho} XP` : '—'}</td>
-                      <td>{r.minigamesCompletados.puzzle ? `${r.minigamesCompletados.puzzle.xpGanho} XP` : '—'}</td>
-                      <td>{r.minigamesCompletados.quiz ? `${r.minigamesCompletados.quiz.xpGanho} XP` : '—'}</td>
+                        <td>{r.minigamesCompletados.lacunas ? `${r.minigamesCompletados.lacunas.xpGanho} XP` : '0 XP'}</td>
+                      <td>{r.minigamesCompletados.puzzle ? `${r.minigamesCompletados.puzzle.xpGanho} XP` : '0 XP'}</td>
+                      <td>{r.minigamesCompletados.quiz ? `${r.minigamesCompletados.quiz.xpGanho} XP` : '0 XP'}</td>
                       <td className="font-bold" style={{ color: 'var(--primary-light)' }}>{r.xpTotal}</td>
                       </tr>
                     );
