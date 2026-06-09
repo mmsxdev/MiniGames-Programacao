@@ -34,7 +34,7 @@ export async function exportarRankingXLSX(onLoadingChange?: (loading: boolean) =
             corEquipada: r.cor_equipada || localMatch?.corEquipada || '',
             tituloEquipado: r.titulo_equipado || localMatch?.tituloEquipado || '',
             iniciadoEm: r.updated_at,
-            minigamesCompletados: localMatch?.minigamesCompletados || { lacunas: null, puzzle: null, quiz: null },
+            minigamesCompletados: localMatch?.minigamesCompletados || r.minigames_completados || { lacunas: null, puzzle: null, quiz: null },
             badges: localMatch?.badges || []
           };
         }) as PerfilAluno[];
@@ -144,19 +144,30 @@ export function importarRankingXLSX(file: File): Promise<PerfilAluno[]> {
         const ws = wb.Sheets['Ranking Geral'];
         if (!ws) { reject(new Error('Aba "Ranking Geral" não encontrada')); return; }
         const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws);
-        const perfis: PerfilAluno[] = rows.map(row => ({
-          nome: row['Nome'] || '',
-          turma: row['Turma'] || '',
-          iniciadoEm: new Date().toISOString(),
-          xpTotal: parseInt(String(row['XP Total'])) || 0,
-          xpGasto: 0,
-          inventario: [],
-          avatarEquipado: '',
-          corEquipada: '',
-          tituloEquipado: '',
-          minigamesCompletados: { lacunas: null, puzzle: null, quiz: null },
-          badges: [],
-        }));
+        const perfis: PerfilAluno[] = rows.map(row => {
+          const lacunasXP = parseInt(String(row['Lacunas XP'])) || 0;
+          const puzzleXP = parseInt(String(row['Quebra-Cabeça XP'])) || 0;
+          const quizXP = parseInt(String(row['Quiz XP'])) || 0;
+
+          return {
+            id: '',
+            nome: row['Nome'] || '',
+            turma: row['Turma'] || '',
+            iniciadoEm: new Date().toISOString(),
+            xpTotal: parseInt(String(row['XP Total'])) || 0,
+            xpGasto: 0,
+            inventario: [],
+            avatarEquipado: '',
+            corEquipada: '',
+            tituloEquipado: '',
+            minigamesCompletados: {
+              lacunas: lacunasXP > 0 ? { xpGanho: lacunasXP, completadoEm: new Date().toISOString(), tentativas: 1, acertos: 0, totalQuestoes: 0, tempoSegundos: 0 } : null,
+              puzzle: puzzleXP > 0 ? { xpGanho: puzzleXP, completadoEm: new Date().toISOString(), tentativas: 1, acertos: 0, totalQuestoes: 0, tempoSegundos: 0 } : null,
+              quiz: quizXP > 0 ? { xpGanho: quizXP, completadoEm: new Date().toISOString(), tentativas: 1, acertos: 0, totalQuestoes: 0, tempoSegundos: 0 } : null,
+            },
+            badges: [],
+          };
+        });
         resolve(perfis);
       } catch (err) { reject(err); }
     };

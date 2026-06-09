@@ -46,7 +46,7 @@ export default function RankingPage() {
               corEquipada: r.cor_equipada || localMatch?.corEquipada || '',
               tituloEquipado: r.titulo_equipado || localMatch?.tituloEquipado || '',
               iniciadoEm: r.updated_at,
-              minigamesCompletados: localMatch?.minigamesCompletados || { lacunas: null, puzzle: null, quiz: null },
+              minigamesCompletados: localMatch?.minigamesCompletados || r.minigames_completados || { lacunas: null, puzzle: null, quiz: null },
               badges: localMatch?.badges || []
             };
           }) as PerfilAluno[];

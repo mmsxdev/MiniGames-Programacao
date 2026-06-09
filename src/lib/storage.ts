@@ -28,6 +28,7 @@ export function salvarPerfil(perfil: PerfilAluno): void {
       avatar_equipado: perfil.avatarEquipado,
       cor_equipada: perfil.corEquipada,
       titulo_equipado: perfil.tituloEquipado,
+      minigames_completados: perfil.minigamesCompletados,
       updated_at: new Date().toISOString()
     }).then(({ error }) => {
       if (error) console.error('Supabase sync error:', error);
